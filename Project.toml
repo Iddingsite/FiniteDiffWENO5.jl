@@ -2,3 +2,11 @@ name = "FiniteDiffWENO5"
 uuid = "4b1b4241-afed-47c3-a843-c6e03821b375"
 authors = ["Iddingsite <hdomingu@uni-mainz.de>"]
 version = "0.1.0"
+
+[deps]
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+
+[compat]
+MuladdMacro = "0.2.4"
+UnPack = "1.0.2"

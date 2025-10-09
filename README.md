@@ -1,3 +1,5 @@
 # FiniteDiffWENO5
 
 [![Build Status](https://github.com/Iddingsite/FiniteDiffWENO5.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Iddingsite/FiniteDiffWENO5.jl/actions/workflows/CI.yml?query=branch%3Amain)
+
+FiniteDiffWENO5.jl is a Julia package that implements a finite difference fifth order Weighted Essentially Non-Oscillatory (WENO) method for advection terms in partial differential equations for 1D, 2D, and 3D problems.

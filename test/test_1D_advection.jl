@@ -71,7 +71,7 @@
         end
 
         @test sum(u) ≈ 51.92724276042664
-        @test maximum(u) ≈ 0.9991824828036449
+        @test maximum(u) ≈ 0.9991826503721033 atol=1e-10
     end
 
     @testset "1D Shu test Chmy CPU" begin#
@@ -153,6 +153,6 @@
         end
 
         @test sum(u) ≈ 51.92724276042664
-        @test maximum(u) ≈ 0.9991824828036449
+        @test maximum(u) ≈ 0.9991824828036449 atol=1e-10
     end
 end

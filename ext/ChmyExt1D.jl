@@ -105,7 +105,7 @@ module ChmyExt1D
                     min(v.x[i], 0) * fr.x[i]
                     ) * Δx_
         else
-            du[i] = @muladd max(v[i], 0) * (fl.x[i+1] - fl.x[i]) * Δx_ + min(v[i], 0) * (fr.x[i+1] - fr.x[i]) * Δx_
+            du[i] = @muladd max(v.x[i], 0) * (fl.x[i+1] - fl.x[i]) * Δx_ + min(v.x[i], 0) * (fr.x[i+1] - fr.x[i]) * Δx_
         end
     end
 
@@ -122,7 +122,7 @@ module ChmyExt1D
     - `Δx`: The spatial grid size.
     - `grid::StructuredGrid`: The computational grid.
     """
-    function WENO_step!(u::T_field, v::NamedTuple{names, <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractVector{<:Real} where names
+    function WENO_step!(u::T_field, v::NamedTuple{(:x,), <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractVector{<:Real}
 
         backend = get_backend(u)
 

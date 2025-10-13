@@ -16,26 +16,26 @@ function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx) where T <: AbstractVect
     nx = size(u, 1)
     Δx_ = inv(Δx)
 
-    @unpack ut, du, stag, fl, fr = weno
+    @unpack ut, du, stag, fl, fr, multithreading = weno
 
     WENO_flux!(fl, fr, u, weno, nx)
     semi_discretisation_weno5!(du, v, weno, Δx_)
 
-    @inbounds for i = axes(ut, 1)
+    @inbounds @maybe_threads multithreading for i = axes(ut, 1)
         ut[i] = @muladd u[i] - Δt * du[i]
     end
 
     WENO_flux!(fl, fr, ut, weno, nx)
     semi_discretisation_weno5!(du, v, weno, Δx_)
 
-    @inbounds for i = axes(ut, 1)
+    @inbounds @maybe_threads multithreading for i = axes(ut, 1)
         ut[i] = @muladd 0.75 * u[i] + 0.25 * ut[i] - 0.25 * Δt * du[i]
     end
 
     WENO_flux!(fl, fr, ut, weno, nx)
     semi_discretisation_weno5!(du, v, weno, Δx_)
 
-    @inbounds for i = axes(u, 1)
+    @inbounds @maybe_threads multithreading for i = axes(u, 1)
         u[i] = @muladd 1.0/3.0 * u[i] + 2.0/3.0 * ut[i] - (2.0/3.0) * Δt * du[i]
     end
 

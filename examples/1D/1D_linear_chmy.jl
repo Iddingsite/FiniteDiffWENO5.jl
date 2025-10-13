@@ -78,8 +78,11 @@ function main(backend=CPU(), nx=200)
         end
     end
 
+
     f = plot(x, u0_vec, label="Exact", linestyle=:dash)
-    scatter!(f, x, u, label="WENO5", title="1D Linear Advection after $period periods", xlabel="x", ylabel="u", legend=:topright)
+    scatter!(f, x, u, label="WENO5", title="1D linear advection after $period periods", xlabel="x", ylabel="u", legend=:topright, markersize=2)
+    # save fig
+
     display(f)
 end
 

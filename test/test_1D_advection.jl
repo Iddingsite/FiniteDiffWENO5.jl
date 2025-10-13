@@ -50,13 +50,13 @@
         weno = WENOScheme(u; boundary=(2, 2), stag=true)
 
         # advection velocity
-        a = ones(nx+1) .* 1
+        a = (;x=ones(nx+1))
 
         # grid size
         Δx = x[2] - x[1]
         Δt = CFL*Δx^(5/3)
 
-        tmax = period * (Lx + Δx) / maximum(abs.(a))
+        tmax = period * (Lx + Δx) / maximum(abs.(a.x))
 
         t = 0
 

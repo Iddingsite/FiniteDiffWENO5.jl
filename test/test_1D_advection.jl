@@ -12,7 +12,7 @@
 
         # Courant number
         CFL = 0.4
-        period = 2
+        period = 4
 
         # Parameters for Shu test
         z = -0.7

@@ -98,6 +98,8 @@ module ChmyExt1D
         I = I + O
         i = I[1]
 
+        nx = g.axes[1].length
+
         if stag
             du[i] = @muladd (max(v.x[i+1], 0) * fl.x[i + 1] +
                     min(v.x[i+1], 0) * fr.x[i + 1] -
@@ -128,7 +130,7 @@ module ChmyExt1D
 
         launch = Launcher(arch, grid)
 
-        #! do things here for halos and such for clusters maybe?
+        #! do things here for halos and such for clusters for boundaries
 
         nx = grid.axes[1].length
         Δx_ = inv(Δx)

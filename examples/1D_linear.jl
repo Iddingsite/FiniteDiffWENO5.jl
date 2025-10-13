@@ -46,7 +46,7 @@ function main(nx=400)
 
 
     u = copy(u0_vec)
-    weno = WENOScheme(u; boundary=(2, 2), stag=true)
+    weno = WENOScheme(u; boundary=(02, 02), stag=true)
 
     # advection velocity
     a = ones(nx+1) .* 1
@@ -55,9 +55,8 @@ function main(nx=400)
     Δx = x[2] - x[1]
     Δt = CFL*Δx^(5/3)
 
-    tmax = period * Lx / maximum(abs.(a))
+    tmax = period * (Lx + Δx) / maximum(abs.(a))
 
-    @show tmax, Δt
     t = 0
 
     while t < tmax
@@ -68,12 +67,12 @@ function main(nx=400)
         if t + Δt > tmax
             Δt = tmax - t
         end
-
-        @show t, tmax
     end
 
     f = plot(x, u0_vec, label="Exact", linestyle=:dash)
-    scatter!(f, x, u, label="WENO5", title="1D Linear Advection after $period periods", xlabel="x", ylabel="u", legend=:topright)
+    scatter!(f, x, u, label="WENO5", title="1D linear advection after $period periods", xlabel="x", ylabel="u", legend=:topright, markersize=2)
+    # save fig
+
     display(f)
 end
 

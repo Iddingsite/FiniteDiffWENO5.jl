@@ -64,9 +64,8 @@ function main(backend=CPU(), nx=200)
     Δx = x[2] - x[1]
     Δt = CFL * Δx^(5/3)
 
-    tmax = period * Lx / maximum(abs.(a.x))
+    tmax = period * (Lx+Δx) / maximum(abs.(a.x))
 
-    println(tmax)
     t = 0
 
     while t < tmax

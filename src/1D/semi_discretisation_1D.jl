@@ -56,7 +56,7 @@ end
 
 function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_) where T <: AbstractArray{<:Real, 1}
 
-    @unpack fl, fr, stag = weno
+    @unpack fl, fr, stag  = weno
 
     # use staggered grid or not for the velocities
     if stag

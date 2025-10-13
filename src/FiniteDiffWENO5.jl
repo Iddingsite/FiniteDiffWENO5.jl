@@ -10,6 +10,6 @@ include("WENO5/reconstruction.jl")
 include("1D/semi_discretisation_1D.jl")
 include("1D/time_stepping.jl")
 
-export WENOScheme, WENO_scheme!
+export WENOScheme, WENO_step!
 
 end # module FiniteDiffWENO5

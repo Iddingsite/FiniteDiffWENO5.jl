@@ -69,7 +69,7 @@ function main(backend=CPU(), nx=200)
     t = 0
 
     while t < tmax
-        WENO_scheme!(u, a, weno, Δt, Δx, grid, arch)
+        WENO_step!(u, a, weno, Δt, Δx, grid, arch)
 
         t += Δt
 

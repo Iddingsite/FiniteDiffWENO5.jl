@@ -13,7 +13,7 @@ function main(nx=400)
     CFL = 0.4
     period = 4
 
-    # Parameters
+    # Parameters for Shu test
     z = -0.7
     δ = 0.005
     β = log(2)/(36*δ^2)
@@ -60,7 +60,7 @@ function main(nx=400)
     t = 0
 
     while t < tmax
-        WENO_scheme!(u, a, weno, Δt, Δx)
+        WENO_step!(u, a, weno, Δt, Δx)
 
         t += Δt
 

@@ -5,7 +5,7 @@ module ChmyExt1D
     using Chmy
     using KernelAbstractions
 
-    import FiniteDiffWENO5: WENOScheme, WENO_scheme!
+    import FiniteDiffWENO5: WENOScheme, WENO_step!
 
 
     """
@@ -98,8 +98,6 @@ module ChmyExt1D
         I = I + O
         i = I[1]
 
-        nx = g.axes[1].length
-
         if stag
             du[i] = @muladd (max(v.x[i+1], 0) * fl.x[i + 1] +
                     min(v.x[i+1], 0) * fr.x[i + 1] -
@@ -112,7 +110,7 @@ module ChmyExt1D
     end
 
     """
-        WENO_scheme!(u::T_field, v::NamedTuple{names, <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractField{<:Real} where names
+        WENO_step!(u::T_field, v::NamedTuple{names, <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractField{<:Real} where names
 
     Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields.
 
@@ -124,13 +122,13 @@ module ChmyExt1D
     - `Δx`: The spatial grid size.
     - `grid::StructuredGrid`: The computational grid.
     """
-    function WENO_scheme!(u::T_field, v::NamedTuple{names, <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractVector{<:Real} where names
+    function WENO_step!(u::T_field, v::NamedTuple{names, <:Tuple{<:T_field}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractVector{<:Real} where names
 
         backend = get_backend(u)
 
         launch = Launcher(arch, grid)
 
-        #! do things here for halos and such for clusters for boundaries
+        #! do things here for halos and such for clusters for boundaries probably
 
         nx = grid.axes[1].length
         Δx_ = inv(Δx)

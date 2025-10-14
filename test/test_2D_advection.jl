@@ -1,4 +1,4 @@
-@testset "struct tests" begin
+@testset "2D advection tests" begin
     @testset "2D linear case" begin
 
         # Number of grid points

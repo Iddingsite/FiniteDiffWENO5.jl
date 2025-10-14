@@ -1,4 +1,4 @@
-@testset "struct tests" begin
+@testset "3D advection tests" begin
     @testset "3D linear case" begin
 
         nx = 50

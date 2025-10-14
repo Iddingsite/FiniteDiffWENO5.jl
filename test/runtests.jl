@@ -16,6 +16,6 @@ function runtests()
     return
 end
 
-@testset "All tests" begin
+@testset verbose = true "All tests" begin
     runtests()
 end

@@ -1,13 +1,22 @@
 using FiniteDiffWENO5
+using Chmy
+using KernelAbstractions
 using Plots
 
-function main(;nx=400, ny=400)
+function main(;backend=CPU(), nx=400, ny=400)
+# backend=CPU()
+# nx=400
+# ny=400
+
+    arch = Arch(backend)
 
     Lx = 1.0
     Δx = Lx / nx
     Δy = Lx / ny
 
     x = range(0, stop=Lx, length=nx)
+
+    grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
 
     # Courant number
     CFL = 0.7
@@ -16,10 +25,11 @@ function main(;nx=400, ny=400)
     # Grid x assumed defined
     x = range(0, length=nx, stop= Lx)
     y = range(0, length=ny, stop= Lx)
-    grid = (x .* ones(ny)', ones(nx) .* y')
+    grid_array = (x .* ones(ny)', ones(nx) .* y')
 
-    vx0 = ones(nx, ny)
-    vy0 = ones(nx, ny)
+    w = π
+    vx0 = w .* (grid_array[1] .- Lx/2)
+    vy0 = -w .* (grid_array[2] .- Lx/2)
 
     v = (;x=vy0, y=vx0)
 
@@ -29,23 +39,30 @@ function main(;nx=400, ny=400)
     u0 = zeros(ny, nx)
 
     for I in CartesianIndices((ny, nx))
-        u0[I] = sign(exp(-((grid[1][I] - x0)^2 + (grid[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
+        u0[I] = sign(exp(-((grid_array[1][I] - x0)^2 + (grid_array[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
     end
 
-    u = copy(u0)
+    u = Field(backend, grid, Center())
+    set!(u, u0)
+
     weno = WENOScheme(u; boundary=(2, 2, 2, 2), stag=false, multithreading=true)
 
+    v = (x=Field(arch, grid, Center()),
+        y=Field(arch, grid, Center()))
+
+    set!(v.x, vy0)
+    set!(v.y, vx0)
 
     # grid size
     Δt = CFL*min(Δx, Δy)^(5/3)
 
-    tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)))
+    tmax = period / (w/(2*π))
 
     t = 0
     counter = 0
 
     while t < tmax
-        WENO_step!(u, v, weno, Δt, Δx, Δy)
+        WENO_step!(u, v, weno, Δt, Δx, Δy, grid, arch)
 
 
         t += Δt
@@ -65,4 +82,4 @@ function main(;nx=400, ny=400)
 
 end
 
-main(nx=400, ny=400)
+main(backend=CPU(), nx=400, ny=400)

@@ -13,9 +13,7 @@ abstract type AbstractWENO end
     stag::Bool
     # boundary conditions
     boundary::NTuple{N_boundary, Int}
-    # WENO-Z (Borges et al. 2008)
-    weno_z::Bool
-    # multithreading (only used for 2D and 3D)
+    # multithreading
     multithreading::Bool
     # fluxes as NamedTuples
     fl::TFlux
@@ -27,7 +25,7 @@ abstract type AbstractWENO end
 end
 
 """
-    WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false, weno_z::Bool=true,  multithreading::Bool=false) where {T, N}
+    WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false,  multithreading::Bool=false) where {T, N}
 
 Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of order 5 constants and arrays for N-dimensional data of type T.
 
@@ -38,14 +36,13 @@ Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of o
 - `ϵ::T`: Tolerance, fixed to machine precision.
 - `stag::Bool`: Whether the grid is staggered (velocities on cell faces) or not (velocities on cell centers).
 - `boundary::NTuple{N_boundary, Int}`: Boundary conditions for each dimension (0: homogeneous Neumann, 1: homogeneous Dirichlet, 2: periodic). Default to homogeneous Neumann.
-- `weno_z::Bool`: Whether to use the WENO-Z formulation (Borges et al. 2008) or not.
 - `multithreading::Bool`: Whether to use multithreading (only for 2D and 3D).
 - `fl::NamedTuple`: Fluxes in the left direction for each dimension.
 - `fr::NamedTuple`: Fluxes in the right direction for each dimension.
 - `du::Array{T, N}`: Semi-discretisation of the advection term.
 - `ut::Array{T, N}`: Temporary array for intermediate calculations using Runge-Kutta.
 """
-function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false, weno_z::Bool=true, multithreading::Bool=false) where {T, N}
+function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false, multithreading::Bool=false) where {T, N}
 
     # check that boundary conditions are correctly defined
     @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."
@@ -78,5 +75,5 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2
     TFlux = typeof(fl)
     TArray = typeof(du)
 
-    return WENOScheme{T, TArray, TFlux, N_boundary}(stag=stag, boundary=boundary, weno_z=weno_z, multithreading=multithreading, fl=fl, fr=fr, du=du, ut=ut)
+    return WENOScheme{T, TArray, TFlux, N_boundary}(stag=stag, boundary=boundary, multithreading=multithreading, fl=fl, fr=fr, du=du, ut=ut)
 end

@@ -18,8 +18,9 @@ function main(;nx=400, ny=400)
     y = range(0, length=ny, stop= Lx)
     grid = (x .* ones(ny)', ones(nx) .* y')
 
-    vx0 = ones(nx, ny)
-    vy0 = ones(nx, ny)
+    w = π
+    vx0 = w .* (grid[1] .- Lx/2)
+    vy0 = -w .* (grid[2] .- Lx/2)
 
     v = (;x=vy0, y=vx0)
 
@@ -39,7 +40,7 @@ function main(;nx=400, ny=400)
     # grid size
     Δt = CFL*min(Δx, Δy)^(5/3)
 
-    tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)))
+    tmax = period / (w/(2*π))
 
     t = 0
     counter = 0

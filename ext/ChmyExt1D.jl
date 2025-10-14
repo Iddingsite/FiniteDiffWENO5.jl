@@ -9,7 +9,7 @@ module ChmyExt1D
 
 
     """
-    WENOScheme(u::AbstractField{T, N}, grid; boundary=(2, 2), stag=true, weno_z=false, multithreading=false) where {T, N}
+    WENOScheme(u::AbstractField{T, N}, grid; boundary=(2, 2), stag=true, multithreading=false) where {T, N}
 
     Create a WENO scheme structure for the given field `u` on the specified `grid` using Chmy.jl.
 
@@ -18,9 +18,9 @@ module ChmyExt1D
     - `grid::StructuredGrid`: The computational grid.
     - `boundary::NTuple{2N, Int}`: A tuple specifying the boundary conditions for each dimension (0: homogeneous Neumann, 1: homogeneous Dirichlet, 2: periodic). Default is periodic (2).
     - `stag::Bool`: Whether the grid is staggered (velocities on cell faces) or not (velocities on cell centers).
-    - `weno_z::Bool`: Whether to use the WENO-Z formulation (Borges et al. 2008) or not. Default is true.
+    - `multithreading::Bool`: Whether to use multithreading (only for 2D and 3D). Default is false.
     """
-    function WENOScheme(u::AbstractField{T, N}, grid; boundary=(2, 2), stag=true, weno_z=true) where {T, N}
+    function WENOScheme(u::AbstractField{T, N}, grid; boundary=(2, 2), stag=true) where {T, N}
 
         # check that boundary conditions are correctly defined
         @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."
@@ -42,7 +42,7 @@ module ChmyExt1D
         TFlux = typeof(fl)
         TArray = typeof(du)
 
-        return WENOScheme{T, TArray, TFlux, N_boundary}(stag=stag, boundary=boundary, weno_z=weno_z, multithreading=multithreading, fl=fl, fr=fr, du=du, ut=ut)
+        return WENOScheme{T, TArray, TFlux, N_boundary}(stag=stag, boundary=boundary, multithreading=multithreading, fl=fl, fr=fr, du=du, ut=ut)
     end
 
     @kernel function WENO_flux_chmy_1D(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
@@ -88,8 +88,8 @@ module ChmyExt1D
         u5 = u[iee]
         u6 = u[ieee]
 
-        fl.x[i] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-        fr.x[i] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+        fl[i] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+        fr[i] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
     end
 
     @kernel function WENO_semi_discretisation_weno5_chmy!(du, fl, fr, v, stag, Δx_, g::StructuredGrid, O)
@@ -135,17 +135,17 @@ module ChmyExt1D
 
         @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
 
-        launch(arch, grid, WENO_flux_chmy_1D => (fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, grid))
+        launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
         launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, grid))
 
         ut .= @muladd u .- Δt .* du
 
-        launch(arch, grid, WENO_flux_chmy_1D => (fl, fr, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
+        launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
         launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, grid))
 
         ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
-        launch(arch, grid, WENO_flux_chmy_1D => (fl, fr, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
+        launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
         launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, grid))
 
         u .= @muladd inv(3.0) .* u .+ 2.0/3.0 .* ut .- 2.0/3.0 .* Δt .* du

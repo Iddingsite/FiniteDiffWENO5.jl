@@ -1,0 +1,86 @@
+using FiniteDiffWENO5
+using Chmy
+using KernelAbstractions
+using GLMakie
+
+function main(;backend=CPU(), nx=50, ny=50, nz=50)
+
+    arch = Arch(backend)
+
+    Lx = 1.0
+    Δx = Lx / nx
+    Δy = Lx / ny
+    Δz = Lx / nz
+
+    grid = UniformGrid(arch; origin=(0.0, 0.0, 0.0), extent=(Lx, Lx, Lx), dims=(nx, ny, nz))
+
+    # Courant number
+    CFL = 0.7
+    period = 1
+
+    # 3D grid
+    x = range(0, length=nx, stop=Lx)
+    y = range(0, length=ny, stop=Lx)
+    z = range(0, length=nz, stop=Lx)
+
+    X = reshape(x, nx, 1, 1)
+    Y = reshape(y, 1, ny, 1)
+    Z = reshape(z, 1, 1, nz)
+
+    X3D = X .+ 0 .* Y .+ 0 .* Z
+    Y3D = 0 .* X .+ Y .+ 0 .* Z
+    Z3D = 0 .* X .+ 0 .* Y .+ Z
+
+    vx0 = ones(size(X3D))
+    vy0 = ones(size(Y3D))
+    vz0 = zeros(size(Z3D)) # Rotation in XY plane only
+
+    v = (; x=vx0, y=vy0, z=vz0)
+
+    x0 = 1/4
+    c = 0.08
+
+    u0 = zeros(ny, nx, nz)
+    for I in CartesianIndices((ny, nx, nz))
+        u0[I] = exp(-((X3D[I]-x0)^2 + (Y3D[I]-x0)^2 + (Z3D[I]-x0)^2) / c^2)
+    end
+
+    u = copy(u0)
+    weno = WENOScheme(u; boundary=(2, 2, 2, 2, 2, 2), stag=false, multithreading=true)
+
+    Δt = CFL * min(Δx, Δy, Δz)^(5/3)
+    tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)), maximum(abs.(vz0)))
+    t = 0
+    counter = 0
+
+    f = Figure(size = (800, 600))
+    ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
+
+    u_obser = Observable(u[:, :, div(nz, 2)])
+
+    heatmap!(ax, u_obser, colormap = :viridis)
+    Colorbar(f[1, 2], label = "u")
+    display(f)
+
+    while t < tmax
+        WENO_step!(u, v, weno, Δt, Δx, Δy, Δz)
+
+        t += Δt
+        if t + Δt > tmax
+            Δt = tmax - t
+        end
+
+        if counter % 10 == 0
+            u_obser[] = u[:, :, div(nz, 2)]
+            ax.title = "t = $(round(t, digits=2))"
+            sleep(0.01)
+        end
+
+        counter += 1
+    end
+
+    return u
+end
+
+u = main()
+

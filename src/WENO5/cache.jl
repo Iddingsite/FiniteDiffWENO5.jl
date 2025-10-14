@@ -27,7 +27,7 @@ end
 """
     WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false,  multithreading::Bool=false) where {T, N}
 
-Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of order 5 constants and arrays for N-dimensional data of type T.
+Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of order 5 constants and arrays for N-dimensional data of type T. The formulation is from Borges et al. 2008.
 
 # Fields
 - `γ::NTuple{3, T}`: Upwind and downwind constants.

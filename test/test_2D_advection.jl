@@ -97,7 +97,7 @@
 
         u = copy(u0)
         weno = WENOScheme(u; boundary=(2, 2, 2, 2), stag=false, multithreading=true)
-        
+
         # grid size
         Δt = CFL*min(Δx, Δy)^(5/3)
 

@@ -2,14 +2,17 @@
 """
     WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx) where T <: AbstractVector{<:Real}
 
-Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization.
+Advance the solution `u` by one time step using the 3rd-order SSP Runge-Kutta method with WENO5-Z as the spatial discretization in 1D.
 
 # Arguments
 - `u::T`: The current solution array to be updated in place.
-- `v`: The velocity array (can be staggered or not based on `weno.stag`).
-- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and arrays.
+- `v`: The velocity array (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple like (x=...).
+- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and temporary arrays.
 - `Δt`: The time step size.
 - `Δx`: The spatial grid size.
+
+Citation: Borges et al. 2008: "An improved weighted essentially non-oscillatory scheme for hyperbolic conservation laws"
+          doi:10.1016/j.jcp.2007.11.038
 """
 function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx) where T <: AbstractVector{<:Real}
 

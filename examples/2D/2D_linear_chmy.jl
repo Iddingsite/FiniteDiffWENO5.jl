@@ -11,8 +11,6 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
     Δx = Lx / nx
     Δy = Lx / ny
 
-    x = range(0, stop=Lx, length=nx)
-
     grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
 
     # Courant number

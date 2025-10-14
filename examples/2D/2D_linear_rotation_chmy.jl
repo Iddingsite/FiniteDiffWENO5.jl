@@ -4,17 +4,12 @@ using KernelAbstractions
 using Plots
 
 function main(;backend=CPU(), nx=400, ny=400)
-# backend=CPU()
-# nx=400
-# ny=400
 
     arch = Arch(backend)
 
     Lx = 1.0
     Δx = Lx / nx
     Δy = Lx / ny
-
-    x = range(0, stop=Lx, length=nx)
 
     grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
 

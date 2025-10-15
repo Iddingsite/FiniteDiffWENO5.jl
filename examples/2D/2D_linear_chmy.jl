@@ -44,7 +44,7 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
     u = Field(backend, grid, Center())
     set!(u, u0)
 
-    weno = WENOScheme(u; boundary=(1, 1, 1, 1), stag=stag, multithreading=true)
+    weno = WENOScheme(u, grid; boundary=(1, 1, 1, 1), stag=stag, multithreading=true)
 
     if stag
         v = VectorField(backend, grid)
@@ -96,5 +96,6 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
     end
 
 end
+
 
 main(backend=CPU(), nx=400, ny=400, stag=true)

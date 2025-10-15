@@ -3,8 +3,10 @@ using GLMakie
 using Chmy
 using KernelAbstractions
 
-function main(backend=CPU(), nx=400)
+# function main(backend=CPU(), nx=400)
 
+backend=CPU()
+ nx=400
     arch = Arch(backend)
 
     x_min = -1.0

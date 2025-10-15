@@ -3,6 +3,8 @@ module FiniteDiffWENO5
 using UnPack
 using MuladdMacro
 
+export WENOScheme, WENO_step!
+
 include("utils.jl")
 include("WENO5/cache.jl")
 include("WENO5/reconstruction.jl")
@@ -13,6 +15,5 @@ include("2D/time_stepping.jl")
 include("3D/semi_discretisation_3D.jl")
 include("3D/time_stepping.jl")
 
-export WENOScheme, WENO_step!
 
 end # module FiniteDiffWENO5

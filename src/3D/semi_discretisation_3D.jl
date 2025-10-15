@@ -91,7 +91,7 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
     end
 
     # last column for z
-    return @inbounds @maybe_threads multithreading for i in axes(fr.z, 1)
+    @inbounds @maybe_threads multithreading for i in axes(fr.z, 1)
         @inbounds for j in axes(fr.z, 2)
             k = nz + 1
 
@@ -113,6 +113,8 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
             fr.z[i, j, k] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
         end
     end
+
+    return nothing
 end
 
 function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_, Δy_, Δz_) where {T <: AbstractArray{<:Real, 3}}
@@ -120,7 +122,7 @@ function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_, Δy_, Δz_
     @unpack fl, fr, stag, multithreading = weno
 
     # use staggered grid or not for the velocities
-    return if stag
+    if stag
         @inbounds @maybe_threads multithreading for I in CartesianIndices(du)
 
             i, j, k = Tuple(I)
@@ -157,4 +159,6 @@ function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_, Δy_, Δz_
                 min(v.z[I], 0) * (fr.z[i, j, k + 1] - fr.z[I]) * Δz_
         end
     end
+
+    return nothing
 end

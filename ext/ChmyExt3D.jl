@@ -1,13 +1,3 @@
-module ChmyExt3D
-using FiniteDiffWENO5
-using MuladdMacro
-using UnPack
-using Chmy
-using KernelAbstractions
-
-import FiniteDiffWENO5: WENO_step!
-
-
 @kernel function WENO_flux_chmy_3D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
@@ -161,7 +151,7 @@ end
     end
 end
 
-@kernel function WENO_semi_discretisation_weno5_chmy!(du, fl, fr, v, stag, Δx_, Δy_, g::StructuredGrid, O)
+@kernel function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, g::StructuredGrid, O)
 
     I = @index(Global, Cartesian)
 
@@ -228,24 +218,23 @@ function WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, �
     launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, u, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
+    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
 
     ut .= @muladd u .- Δt .* du
 
     launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
+    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
 
     ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
     launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
+    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
 
     u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
 
     return synchronize(backend)
-end
 end

@@ -39,7 +39,9 @@ function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy, Δz) where {T <: A
     WENO_flux!(fl, fr, ut, weno, nx, ny, nz)
     semi_discretisation_weno5!(du, v, weno, Δx_, Δy_, Δz_)
 
-    return @inbounds @maybe_threads multithreading for I in CartesianIndices(u)
+    @inbounds @maybe_threads multithreading for I in CartesianIndices(u)
         u[I] = @muladd 1.0 / 3.0 * u[I] + 2.0 / 3.0 * ut[I] - (2.0 / 3.0) * Δt * du[I]
     end
+
+    return nothing
 end

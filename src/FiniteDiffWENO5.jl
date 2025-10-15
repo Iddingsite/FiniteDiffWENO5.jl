@@ -2,8 +2,6 @@ module FiniteDiffWENO5
 
 using UnPack
 using MuladdMacro
-using KernelAbstractions
-using Chmy
 
 include("utils.jl")
 include("WENO5/cache.jl")

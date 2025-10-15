@@ -23,9 +23,9 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
     y = range(0, length=ny, stop=Lx)
     z = range(0, length=nz, stop=Lx)
 
-    X = reshape(x, nx, 1, 1)
-    Y = reshape(y, 1, ny, 1)
-    Z = reshape(z, 1, 1, nz)
+    X = reshape(x, 1, nx, 1) .* ones(ny, 1, nz)
+    Y = reshape(y, ny, 1, 1) .* ones(1, nx, nz)
+    Z = reshape(z, 1, 1, nz) .* ones(ny, nx, 1)
 
     X3D = X .+ 0 .* Y .+ 0 .* Z
     Y3D = 0 .* X .+ Y .+ 0 .* Z
@@ -42,7 +42,7 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
 
     u0 = zeros(ny, nx, nz)
     for I in CartesianIndices((ny, nx, nz))
-        u0[I] = exp(-((X3D[I]-x0)^2 + (Y3D[I]-x0)^2 + (Z3D[I]-x0)^2) / c^2)
+        u0[I] = exp(-((X3D[I]-x0)^2 + (Y3D[I]-x0)^2 + (Z3D[I]-0.5)^2) / c^2)
     end
 
     u = copy(u0)
@@ -55,15 +55,13 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
 
     f = Figure(size = (800, 600))
     ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
-
     u_obser = Observable(u[:, :, div(nz, 2)])
-
-    heatmap!(ax, u_obser, colormap = :viridis)
-    Colorbar(f[1, 2], label = "u")
+    hm = heatmap!(ax, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1))
+    Colorbar(f[1, 2], label = "u", hm)
     display(f)
 
     while t < tmax
-        WENO_step!(u, v, weno, Δt, Δx, Δy, Δz)
+        WENO_step!(u, v, weno, Δt, Δx, Δy, Δz, grid, arch)
 
         t += Δt
         if t + Δt > tmax
@@ -73,14 +71,12 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
         if counter % 10 == 0
             u_obser[] = u[:, :, div(nz, 2)]
             ax.title = "t = $(round(t, digits=2))"
-            sleep(0.01)
         end
 
         counter += 1
     end
 
-    return u
 end
 
-u = main()
+main()
 

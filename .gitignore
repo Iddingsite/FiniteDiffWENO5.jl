@@ -1,4 +1,8 @@
-/Manifest*.toml
-.DS_Store
+Manifest.toml
+*.DS_Store
 *.vscode
 *dev
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+docs/build/

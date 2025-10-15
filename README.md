@@ -4,5 +4,94 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 
+FiniteDiffWENO5.jl is a Julia package that implements a finite difference fifth order Weighted Essentially Non-Oscillatory (WENO) method on regular grids for advection terms in partial differential equations for 1D, 2D, and 3D problems. The current implementation is based on the WENO-Z scheme from [Borges et al. (2008)](10.1016/j.jcp.2007.11.038).
 
-FiniteDiffWENO5.jl is a Julia package that implements a finite difference fifth order Weighted Essentially Non-Oscillatory (WENO) method for advection terms in partial differential equations for 1D, 2D, and 3D problems.
+Currently, the package focuses on non-conservative form of the advection terms ($\mathbf{v} \cdot \nabla u$) on collocated grid, and conservative form ($\nabla \cdot (\mathbf{v} u)$) on staggered grid with the advection velocity located on the sides of the cells. The time integration is performed using a third-order Strong Stability Preserving Runge-Kutta (SSP-RK3) method.
+
+The core of the package is written in pure Julia, focusing on performance using CPUs but GPU support is available using KernelAbstractions.jl and Chmy.jl via an extension.
+
+## Features
+
+The package currently provides only two main functions: `WENOScheme()`, that is used to create a WENO scheme struct containing all the necessary information for the WENO method, and `WENO_step!()`, that performs one step of the time integration using the WENO method. The grid and the initial condition must be defined by the user.
+
+## Example
+
+Here is a simple example of using the package to solve the 1D linear advection equation with periodic boundary conditions and classical initial conditions:
+
+```julia
+using FiniteDiffWENO5
+using GLMakie
+
+# Number of grid points
+nx = 200
+
+# domain size
+x_min = -1.0
+x_max = 1.0
+Lx = x_max - x_min
+
+x = range(x_min, stop = x_max, length = nx)
+
+# Courant number
+CFL = 0.4
+period = 4
+
+# Parameters for Shu test
+z = -0.7
+δ = 0.005
+β = log(2) / (36 * δ^2)
+a = 0.5
+α = 10
+
+# Functions
+G(x, β, z) = exp.(-β .* (x .- z) .^ 2)
+F(x, α, a) = sqrt.(max.(1 .- α^2 .* (x .- a) .^ 2, 0.0))
+
+# Grid x assumed defined
+u0_vec = zeros(length(x))
+
+# Gaussian-like smooth bump at x in [-0.8, -0.6]
+idx = (x .>= -0.8) .& (x .<= -0.6)
+u0_vec[idx] .= (1 / 6) .* (G(x[idx], β, z - δ) .+ 4 .* G(x[idx], β, z) .+ G(x[idx], β, z + δ))
+
+# Heaviside step at x in [-0.4, -0.2]
+idx = (x .>= -0.4) .& (x .<= -0.2)
+u0_vec[idx] .= 1.0
+
+# Piecewise linear ramp at x in [0, 0.2]
+# Triangular spike at x=0.1, base width 0.2
+idx = abs.(x .- 0.1) .<= 0.1
+u0_vec[idx] .= 1 .- 10 .* abs.(x[idx] .- 0.1)
+
+# Elliptic/smooth bell at x in [0.4, 0.6]
+idx = (x .>= 0.4) .& (x .<= 0.6)
+u0_vec[idx] .= (1 / 6) .* (F(x[idx], α, a - δ) .+ 4 .* F(x[idx], α, a) .+ F(x[idx], α, a + δ))
+
+u = copy(u0_vec)
+weno = WENOScheme(u; boundary = (2, 2), stag = true)
+
+# advection velocity
+a = (; x = ones(nx + 1))
+
+# grid size
+Δx = x[2] - x[1]
+Δt = CFL * Δx^(5 / 3)
+
+tmax = period * (Lx + Δx) / maximum(abs.(a.x))
+
+t = 0
+
+while t < tmax
+    WENO_step!(u, a, weno, Δt, Δx)
+
+    t += Δt
+
+    if t + Δt > tmax
+        Δt = tmax - t
+    end
+end
+```
+
+Which produces the following result:
+
+![](/docs/assets/1D_linear_advection.png)

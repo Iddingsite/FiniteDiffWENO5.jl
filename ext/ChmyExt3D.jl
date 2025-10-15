@@ -44,8 +44,8 @@
         u5 = u[iee, j, k]
         u6 = u[ieee, j, k]
 
-        fl[i, j] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-        fr[i, j] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+        fl[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+        fr[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
     end
 end
 
@@ -95,8 +95,8 @@ end
         u5 = u[i, jee, k]
         u6 = u[i, jeee, k]
 
-        fl[i, j] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-        fr[i, j] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+        fl[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+        fr[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
     end
 end
 
@@ -146,12 +146,12 @@ end
         u5 = u[i, j, kee]
         u6 = u[i, j, keee]
 
-        fl[i, j] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-        fr[i, j] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+        fl[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+        fr[i, j, k] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
     end
 end
 
-@kernel function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, g::StructuredGrid, O)
+@kernel function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_, g::StructuredGrid, O)
 
     I = @index(Global, Cartesian)
 
@@ -178,7 +178,7 @@ end
         else
             du[I] = @muladd max(v.x[I], 0) * (fl.x[i + 1, j, k] - fl.x[I]) * Δx_ + min(v.x[I], 0) * (fr.x[i + 1, j, k] - fr.x[I]) * Δx_ +
                 max(v.y[I], 0) * (fl.y[i, j + 1, k] - fl.y[I]) * Δy_ + min(v.y[I], 0) * (fr.y[i, j + 1, k] - fr.y[I]) * Δy_ +
-                max(v.z[I], 0) * (fl.z[i, j, k + 1] - fl.z[I]) * Δz_ + min(v.z[I], 0) * (fr.z[i, j, k + 1] - fr.z[I]) * Δz
+                max(v.z[I], 0) * (fl.z[i, j, k + 1] - fl.z[I]) * Δz_ + min(v.z[I], 0) * (fr.z[i, j, k + 1] - fr.z[I]) * Δz_
         end
     end
 end

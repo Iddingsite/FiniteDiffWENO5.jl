@@ -1,7 +1,7 @@
 using FiniteDiffWENO5
 using Chmy
 using KernelAbstractions
-using Plots
+using GLMakie
 
 function main(;backend=CPU(), nx=400, ny=400, stag=true)
 
@@ -66,6 +66,13 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
 
     mass_ini = sum(u0) * Δx * Δy
 
+    f = Figure(size = (800, 600))
+    ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
+    u_obser = Observable(u0)
+    hm = heatmap!(ax, x, y, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1))
+    Colorbar(f[1, 2], label = "u", hm)
+    display(f)
+
     while t < tmax
         WENO_step!(u, v, weno, Δt, Δx, Δy, grid, arch)
 
@@ -80,8 +87,8 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
 
             mass_ratio = (sum(u) * Δx * Δy) / mass_ini
 
-            heatmap(x, y, u, title="t = $(round(t, digits=2)) | mass = $mass_ratio", clims=(0,1))
-            gui()
+            u_obser[] = u
+            ax.title = "t = $(round(t, digits=2)), mass ratio = $(round(mass_ratio, digits=6))"
         end
 
         counter += 1

@@ -2,7 +2,6 @@ using FiniteDiffWENO5
 using GLMakie
 
 function main(; nx=50, ny=50, nz=50)
-
     L = 1.0
     Δx = L / nx
     Δy = L / ny
@@ -17,9 +16,9 @@ function main(; nx=50, ny=50, nz=50)
     period = 1
 
     # 3D grid
-    X = reshape(x, 1, 1, nx) .* ones(ny, nz, 1)
-    Y = reshape(y, 1, ny, 1) .* ones(nx, 1, nz)
-    Z = reshape(z, nz, 1, 1) .* ones(1, ny, nx)
+    X = reshape(x, 1, nx, 1) .* ones(ny, 1, nz)
+    Y = reshape(y, ny, 1, 1) .* ones(1, nx, nz)
+    Z = reshape(z, 1, 1, nz) .* ones(ny, nx, 1)
 
     vx0 = ones(size(X))
     vy0 = ones(size(Y))
@@ -32,7 +31,7 @@ function main(; nx=50, ny=50, nz=50)
 
     u0 = zeros(ny, nx, nz)
     for I in CartesianIndices((ny, nx, nz))
-        u0[I] = exp(-((X[I]-x0)^2 + (Y[I]-x0)^2 + (Z[I]-x0)^2) / c^2)
+        u0[I] = exp(-((X[I]-x0)^2 + (Y[I]-x0)^2 + (Z[I] - 0.5)^2) / c^2)
     end
 
     u = copy(u0)
@@ -45,10 +44,8 @@ function main(; nx=50, ny=50, nz=50)
 
     f = Figure(size = (800, 600))
     ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
-
     u_obser = Observable(u[:, :, div(nz, 2)])
-
-    heatmap!(ax, u_obser, colormap = :viridis)
+    heatmap!(ax, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1.0))
     Colorbar(f[1, 2], label = "u")
     display(f)
 
@@ -63,7 +60,6 @@ function main(; nx=50, ny=50, nz=50)
         if counter % 50 == 0
             u_obser[] = u[:, :, div(nz, 2)]
             ax.title = "t = $(round(t, digits=2))"
-            sleep(0.01)
         end
 
         counter += 1
@@ -71,4 +67,3 @@ function main(; nx=50, ny=50, nz=50)
 end
 
 main()
-

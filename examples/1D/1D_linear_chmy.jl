@@ -1,9 +1,9 @@
 using FiniteDiffWENO5
-using Plots
+using GLMakie
 using Chmy
 using KernelAbstractions
 
-function main(backend=CPU(), nx=200)
+function main(backend=CPU(), nx=400)
 
     arch = Arch(backend)
 
@@ -17,7 +17,7 @@ function main(backend=CPU(), nx=200)
 
     # Courant number
     CFL = 0.7
-    period = 4
+    period = 1
 
     # Parameters
     z = -0.7
@@ -78,11 +78,12 @@ function main(backend=CPU(), nx=200)
         end
     end
 
-
-    f = plot(x, u0_vec, label="Exact", linestyle=:dash)
-    scatter!(f, x, u, label="WENO5", title="1D linear advection after $period periods", xlabel="x", ylabel="u", legend=:topright, markersize=2)
-    # save fig
-
+    f = Figure(size = (800, 600))
+    ax = Axis(f[1, 1], title = "1D linear advection after $period periods", xlabel = "x", ylabel = "u")
+    lines!(ax, x, u0_vec, label = "Exact", linestyle = :dash, color = :red)
+    scatter!(ax, x, interior(u), label = "WENO5")
+    xlims!(ax, x_min, x_max)
+    axislegend(ax)
     display(f)
 end
 

@@ -116,7 +116,7 @@
         counter = 0
 
         while t < tmax
-            WENO_step!(u, v, weno, Δt, Δx, Δy, Δz)
+            WENO_step!(u, v, weno, Δt, Δx, Δy, Δz, grid, arch)
 
             t += Δt
             if t + Δt > tmax

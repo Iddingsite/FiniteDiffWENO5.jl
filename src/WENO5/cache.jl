@@ -56,7 +56,6 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N
     # helper to expand size in a given dimension
     function flux_size(d)
         return ntuple(i -> sizes[i] + (i == d ? 1 : 0), min(N, 3))
-        # ntuple(i -> sizes[i], N)
     end
 
     # construct NamedTuples for left and right fluxes

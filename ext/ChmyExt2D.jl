@@ -163,19 +163,19 @@ function WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, �
     launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
 
-    ut .= @muladd u .- Δt .* du
+    interior(ut) .= @muladd interior(u) .- Δt .* interior(du)
 
     launch(arch, grid, WENO_flux_chmy_2D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
 
-    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
+    interior(ut) .= @muladd 0.75 .* interior(u) .+ 0.25 .* interior(ut) .- 0.25 .* Δt .* interior(du)
 
     launch(arch, grid, WENO_flux_chmy_2D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
 
-    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
+    interior(u) .= @muladd inv(3.0) .* interior(u) .+ 2.0 / 3.0 .* interior(ut) .- 2.0 / 3.0 .* Δt .* interior(du)
 
     return synchronize(backend)
 end

@@ -17,7 +17,7 @@
         # Grid x assumed defined
         x = range(0, length = nx, stop = Lx)
         y = range(0, length = ny, stop = Lx)
-        grid = (x .* ones(ny)', ones(nx) .* y')
+        grid_array = (x .* ones(ny)', ones(nx) .* y')
 
         vx0 = ones(nx, ny)
         vy0 = ones(nx, ny)
@@ -30,7 +30,7 @@
         u0 = zeros(ny, nx)
 
         for I in CartesianIndices((ny, nx))
-            u0[I] = sign(exp(-((grid[1][I] - x0)^2 + (grid[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
+            u0[I] = sign(exp(-((grid_array[1][I] - x0)^2 + (grid_array[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
         end
 
         u = copy(u0)
@@ -70,6 +70,8 @@
         Δx = Lx / nx
         Δy = Lx / ny
 
+        grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
+
         x = range(0, stop = Lx, length = nx)
 
         # Courant number
@@ -79,7 +81,7 @@
         # Grid x assumed defined
         x = range(0, length = nx, stop = Lx)
         y = range(0, length = ny, stop = Lx)
-        grid = (x .* ones(ny)', ones(nx) .* y')
+        grid_array = (x .* ones(ny)', ones(nx) .* y')
 
         vx0 = ones(nx, ny)
         vy0 = ones(nx, ny)
@@ -92,11 +94,12 @@
         u0 = zeros(ny, nx)
 
         for I in CartesianIndices((ny, nx))
-            u0[I] = sign(exp(-((grid[1][I] - x0)^2 + (grid[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
+            u0[I] = sign(exp(-((grid_array[1][I] - x0)^2 + (grid_array[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
         end
 
-        u = copy(u0)
-        weno = WENOScheme(u; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
+        u = Field(backend, grid, Center())
+        set!(u, u0)
+        weno = WENOScheme(u, grid; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
 
         # grid size
         Δt = CFL * min(Δx, Δy)^(5 / 3)

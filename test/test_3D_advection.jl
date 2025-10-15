@@ -107,8 +107,9 @@
             u0[I] = exp(-((X3D[I] - x0)^2 + (Y3D[I] - x0)^2 + (Z3D[I] - x0)^2) / c^2)
         end
 
-        u = copy(u0)
-        weno = WENOScheme(u; boundary = (2, 2, 2, 2, 2, 2), stag = false, multithreading = true)
+        u = Field(backend, grid, Center())
+        set!(u, u0)
+        weno = WENOScheme(u, grid; boundary = (2, 2, 2, 2, 2, 2), stag = false, multithreading = true)
 
         Δt = CFL * min(Δx, Δy, Δz)^(5 / 3)
         tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)), maximum(abs.(vz0)))

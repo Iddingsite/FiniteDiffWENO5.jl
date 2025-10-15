@@ -1,5 +1,3 @@
-
-
 function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
     @unpack boundary, χ, γ, ζ, ϵ, multithreading = weno
 
@@ -15,10 +13,10 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
         i, j, k = Tuple(I)
 
         iwww = left_index(i, 3, nx, bLx)
-        iww  = left_index(i, 2, nx, bLx)
-        iw   = left_index(i, 1, nx, bLx)
-        ie   = right_index(i, 0, nx, bRx)
-        iee  = right_index(i, 1, nx, bRx)
+        iww = left_index(i, 2, nx, bLx)
+        iw = left_index(i, 1, nx, bLx)
+        ie = right_index(i, 0, nx, bRx)
+        iee = right_index(i, 1, nx, bRx)
         ieee = right_index(i, 2, nx, bRx)
 
         u1 = u[iwww, j, k]
@@ -33,10 +31,10 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
 
         @inbounds if i < nx + 1
             jwww = left_index(j, 3, ny, bLy)
-            jww  = left_index(j, 2, ny, bLy)
-            jw   = left_index(j, 1, ny, bLy)
-            je   = right_index(j, 0, ny, bRy)
-            jee  = right_index(j, 1, ny, bRy)
+            jww = left_index(j, 2, ny, bLy)
+            jw = left_index(j, 1, ny, bLy)
+            je = right_index(j, 0, ny, bRy)
+            jee = right_index(j, 1, ny, bRy)
             jeee = right_index(j, 2, ny, bRy)
 
             u1 = u[i, jwww, k]
@@ -50,10 +48,10 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
             fr.y[I] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
 
             kwww = left_index(k, 3, nz, bLz)
-            kww  = left_index(k, 2, nz, bLz)
-            kw   = left_index(k, 1, nz, bLz)
-            ke   = right_index(k, 0, nz, bRz)
-            kee  = right_index(k, 1, nz, bRz)
+            kww = left_index(k, 2, nz, bLz)
+            kw = left_index(k, 1, nz, bLz)
+            ke = right_index(k, 0, nz, bRz)
+            kee = right_index(k, 1, nz, bRz)
             keee = right_index(k, 2, nz, bRz)
 
             u1 = u[i, j, kwww]
@@ -74,10 +72,10 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
             j = ny + 1
 
             jwww = left_index(j, 3, ny, bLy)
-            jww  = left_index(j, 2, ny, bLy)
-            jw   = left_index(j, 1, ny, bLy)
-            je   = right_index(j, 0, ny, bRy)
-            jee  = right_index(j, 1, ny, bRy)
+            jww = left_index(j, 2, ny, bLy)
+            jw = left_index(j, 1, ny, bLy)
+            je = right_index(j, 0, ny, bRy)
+            jee = right_index(j, 1, ny, bRy)
             jeee = right_index(j, 2, ny, bRy)
 
             u1 = u[i, jwww, k]
@@ -87,21 +85,21 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
             u5 = u[i, jee, k]
             u6 = u[i, jeee, k]
 
-            fl.y[i,j,k] = weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-            fr.y[i,j,k] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+            fl.y[i, j, k] = weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+            fr.y[i, j, k] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
         end
     end
 
     # last column for z
-    @inbounds @maybe_threads multithreading for i in axes(fr.z, 1)
+    return @inbounds @maybe_threads multithreading for i in axes(fr.z, 1)
         @inbounds for j in axes(fr.z, 2)
             k = nz + 1
 
             kwww = left_index(k, 3, nz, bLz)
-            kww  = left_index(k, 2, nz, bLz)
-            kw   = left_index(k, 1, nz, bLz)
-            ke   = right_index(k, 0, nz, bRz)
-            kee  = right_index(k, 1, nz, bRz)
+            kww = left_index(k, 2, nz, bLz)
+            kw = left_index(k, 1, nz, bLz)
+            ke = right_index(k, 0, nz, bRz)
+            kee = right_index(k, 1, nz, bRz)
             keee = right_index(k, 2, nz, bRz)
 
             u1 = u[i, j, kwww]
@@ -111,52 +109,52 @@ function WENO_flux!(fl, fr, u, weno, nx, ny, nz)
             u5 = u[i, j, kee]
             u6 = u[i, j, keee]
 
-            fl.z[i,j,k] = weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
-            fr.z[i,j,k] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
+            fl.z[i, j, k] = weno5_reconstruction_upwind(u1, u2, u3, u4, u5, χ, γ, ζ, ϵ)
+            fr.z[i, j, k] = weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
         end
     end
 end
 
-function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_, Δy_, Δz_) where T <: AbstractArray{<:Real, 3}
+function semi_discretisation_weno5!(du::T, v, weno::WENOScheme, Δx_, Δy_, Δz_) where {T <: AbstractArray{<:Real, 3}}
 
-    @unpack fl, fr, stag, multithreading  = weno
+    @unpack fl, fr, stag, multithreading = weno
 
     # use staggered grid or not for the velocities
-    if stag
-        @inbounds @maybe_threads multithreading for I = CartesianIndices(du)
+    return if stag
+        @inbounds @maybe_threads multithreading for I in CartesianIndices(du)
 
             i, j, k = Tuple(I)
 
             du[I] = @muladd (
-                            max(v.x[i+1, j, k], 0) * fl.x[i+1, j, k] +
-                            min(v.x[i+1, j, k], 0) * fr.x[i+1, j, k] -
-                            max(v.x[I], 0) * fl.x[I] -
-                            min(v.x[I], 0) * fr.x[I]
-                            ) * Δx_ +
-                            (
-                            max(v.y[i, j+1, k], 0) * fl.y[i, j+1, k] +
-                            min(v.y[i, j+1, k], 0) * fr.y[i, j+1, k] -
-                            max(v.y[I], 0) * fl.y[I] -
-                            min(v.y[I], 0) * fr.y[I]
-                            ) * Δy_ +
-                            (
-                            max(v.z[i, j, k+1], 0) * fl.z[i, j, k+1] +
-                            min(v.z[i, j, k+1], 0) * fr.z[i, j, k+1] -
-                            max(v.z[I], 0) * fl.z[I] -
-                            min(v.z[I], 0) * fr.z[I]
-                            ) * Δz_
+                max(v.x[i + 1, j, k], 0) * fl.x[i + 1, j, k] +
+                    min(v.x[i + 1, j, k], 0) * fr.x[i + 1, j, k] -
+                    max(v.x[I], 0) * fl.x[I] -
+                    min(v.x[I], 0) * fr.x[I]
+            ) * Δx_ +
+                (
+                max(v.y[i, j + 1, k], 0) * fl.y[i, j + 1, k] +
+                    min(v.y[i, j + 1, k], 0) * fr.y[i, j + 1, k] -
+                    max(v.y[I], 0) * fl.y[I] -
+                    min(v.y[I], 0) * fr.y[I]
+            ) * Δy_ +
+                (
+                max(v.z[i, j, k + 1], 0) * fl.z[i, j, k + 1] +
+                    min(v.z[i, j, k + 1], 0) * fr.z[i, j, k + 1] -
+                    max(v.z[I], 0) * fl.z[I] -
+                    min(v.z[I], 0) * fr.z[I]
+            ) * Δz_
         end
     else
-        @inbounds @maybe_threads multithreading for I = CartesianIndices(du)
+        @inbounds @maybe_threads multithreading for I in CartesianIndices(du)
 
             i, j, k = Tuple(I)
 
-            du[I] = @muladd max(v.x[I], 0) * (fl.x[i+1, j, k] - fl.x[I]) * Δx_ +
-                    min(v.x[I], 0) * (fr.x[i+1, j, k] - fr.x[I]) * Δx_ +
-                    max(v.y[I], 0) * (fl.y[i, j+1, k] - fl.y[I]) * Δy_ +
-                    min(v.y[I], 0) * (fr.y[i, j+1, k] - fr.y[I]) * Δy_ +
-                    max(v.z[I], 0) * (fl.z[i, j, k+1] - fl.z[I]) * Δz_ +
-                    min(v.z[I], 0) * (fr.z[i, j, k+1] - fr.z[I]) * Δz_
+            du[I] = @muladd max(v.x[I], 0) * (fl.x[i + 1, j, k] - fl.x[I]) * Δx_ +
+                min(v.x[I], 0) * (fr.x[i + 1, j, k] - fr.x[I]) * Δx_ +
+                max(v.y[I], 0) * (fl.y[i, j + 1, k] - fl.y[I]) * Δy_ +
+                min(v.y[I], 0) * (fr.y[i, j + 1, k] - fr.y[I]) * Δy_ +
+                max(v.z[I], 0) * (fl.z[i, j, k + 1] - fl.z[I]) * Δz_ +
+                min(v.z[I], 0) * (fr.z[i, j, k + 1] - fr.z[I]) * Δz_
         end
     end
 end

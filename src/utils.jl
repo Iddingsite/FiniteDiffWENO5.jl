@@ -1,4 +1,3 @@
-
 @inline function left_index(i, d, nx, ::Val{0})
     # Dirichlet (clamped to domain)
     return clamp(i - d, 1, nx)

@@ -10,9 +10,9 @@
         Δy = L / ny
         Δz = L / nz
 
-        x = range(0, stop=L, length=nx)
-        y = range(0, stop=L, length=ny)
-        z = range(0, stop=L, length=nz)
+        x = range(0, stop = L, length = nx)
+        y = range(0, stop = L, length = ny)
+        z = range(0, stop = L, length = nz)
 
         # Courant number
         CFL = 0.7
@@ -27,20 +27,20 @@
         vy0 = ones(size(Y))
         vz0 = zeros(size(X)) # Rotation in XY plane only
 
-        v = (; x=vx0, y=vy0, z=vz0)
+        v = (; x = vx0, y = vy0, z = vz0)
 
-        x0 = 1/4
+        x0 = 1 / 4
         c = 0.08
 
         u0 = zeros(ny, nx, nz)
         for I in CartesianIndices((ny, nx, nz))
-            u0[I] = exp(-((X[I]-x0)^2 + (Y[I]-x0)^2 + (Z[I]-x0)^2) / c^2)
+            u0[I] = exp(-((X[I] - x0)^2 + (Y[I] - x0)^2 + (Z[I] - x0)^2) / c^2)
         end
 
         u = copy(u0)
-        weno = WENOScheme(u; boundary=(2, 2, 2, 2, 2, 2), stag=false, multithreading=true)
+        weno = WENOScheme(u; boundary = (2, 2, 2, 2, 2, 2), stag = false, multithreading = true)
 
-        Δt = CFL * min(Δx, Δy, Δz)^(5/3)
+        Δt = CFL * min(Δx, Δy, Δz)^(5 / 3)
         tmax = period * L / max(maximum(abs.(vx0)), maximum(abs.(vy0)), maximum(abs.(vz0)))
         t = 0
         counter = 0
@@ -56,13 +56,13 @@
             counter += 1
         end
 
-        @test isapprox(sum(u), sum(u0); atol=1e-6)
-        @test maximum(u) ≈ 0.9541260266954649 atol=1e-8
+        @test isapprox(sum(u), sum(u0); atol = 1.0e-6)
+        @test maximum(u) ≈ 0.9541260266954649 atol = 1.0e-8
     end
 
     @testset "3D linear case Chmy CPU" begin
 
-        backend=CPU()
+        backend = CPU()
         arch = Arch(backend)
 
         nx = 50
@@ -74,16 +74,16 @@
         Δy = Lx / ny
         Δz = Lx / nz
 
-        grid = UniformGrid(arch; origin=(0.0, 0.0, 0.0), extent=(Lx, Lx, Lx), dims=(nx, ny, nz))
+        grid = UniformGrid(arch; origin = (0.0, 0.0, 0.0), extent = (Lx, Lx, Lx), dims = (nx, ny, nz))
 
         # Courant number
         CFL = 0.7
         period = 1
 
         # 3D grid
-        x = range(0, length=nx, stop=Lx)
-        y = range(0, length=ny, stop=Lx)
-        z = range(0, length=nz, stop=Lx)
+        x = range(0, length = nx, stop = Lx)
+        y = range(0, length = ny, stop = Lx)
+        z = range(0, length = nz, stop = Lx)
 
         X = reshape(x, nx, 1, 1)
         Y = reshape(y, 1, ny, 1)
@@ -97,20 +97,20 @@
         vy0 = ones(size(Y3D))
         vz0 = zeros(size(Z3D)) # Rotation in XY plane only
 
-        v = (; x=vx0, y=vy0, z=vz0)
+        v = (; x = vx0, y = vy0, z = vz0)
 
-        x0 = 1/4
+        x0 = 1 / 4
         c = 0.08
 
         u0 = zeros(ny, nx, nz)
         for I in CartesianIndices((ny, nx, nz))
-            u0[I] = exp(-((X3D[I]-x0)^2 + (Y3D[I]-x0)^2 + (Z3D[I]-x0)^2) / c^2)
+            u0[I] = exp(-((X3D[I] - x0)^2 + (Y3D[I] - x0)^2 + (Z3D[I] - x0)^2) / c^2)
         end
 
         u = copy(u0)
-        weno = WENOScheme(u; boundary=(2, 2, 2, 2, 2, 2), stag=false, multithreading=true)
+        weno = WENOScheme(u; boundary = (2, 2, 2, 2, 2, 2), stag = false, multithreading = true)
 
-        Δt = CFL * min(Δx, Δy, Δz)^(5/3)
+        Δt = CFL * min(Δx, Δy, Δz)^(5 / 3)
         tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)), maximum(abs.(vz0)))
         t = 0
         counter = 0
@@ -126,7 +126,7 @@
             counter += 1
         end
 
-        @test isapprox(sum(u), sum(u0); atol=1e-6)
-        @test maximum(u) ≈ 0.9541260266954649 atol=1e-8
+        @test isapprox(sum(u), sum(u0); atol = 1.0e-6)
+        @test maximum(u) ≈ 0.9541260266954649 atol = 1.0e-8
     end
 end

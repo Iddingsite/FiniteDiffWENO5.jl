@@ -4,9 +4,9 @@ abstract type AbstractWENO end
     # upwind and downwind constants
     γ::NTuple{3, T} = T.((0.1, 0.6, 0.3))
     # betas' constants
-    χ::NTuple{2, T} = T.((13/12, 1/4))
+    χ::NTuple{2, T} = T.((13 / 12, 1 / 4))
     # stencil weights
-    ζ::NTuple{5, T} = T.((1/3, 7/6, 11/6, 1/6, 5/6))
+    ζ::NTuple{5, T} = T.((1 / 3, 7 / 6, 11 / 6, 1 / 6, 5 / 6))
     # tolerance to machine precision of the type T
     ϵ::T = eps(T)
     # staggered grid or not (velocities on cell faces or cell centers)
@@ -42,7 +42,7 @@ Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of o
 - `du::Array{T, N}`: Semi-discretisation of the advection term.
 - `ut::Array{T, N}`: Temporary array for intermediate calculations using Runge-Kutta.
 """
-function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false, multithreading::Bool=false) where {T, N}
+function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N * 2), stag::Bool = false, multithreading::Bool = false) where {T, N}
 
     # check that boundary conditions are correctly defined
     @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."
@@ -55,7 +55,7 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2
 
     # helper to expand size in a given dimension
     function flux_size(d)
-        ntuple(i -> sizes[i] + (i == d ? 1 : 0), min(N, 3))
+        return ntuple(i -> sizes[i] + (i == d ? 1 : 0), min(N, 3))
         # ntuple(i -> sizes[i], N)
     end
 
@@ -70,10 +70,10 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2
     ut = zeros(T, size(u0))
 
     # boundary conditions tuple length
-    N_boundary = 2*N
+    N_boundary = 2 * N
 
     TFlux = typeof(fl)
     TArray = typeof(du)
 
-    return WENOScheme{T, TArray, TFlux, N_boundary}(stag=stag, boundary=boundary, multithreading=multithreading, fl=fl, fr=fr, du=du, ut=ut)
+    return WENOScheme{T, TArray, TFlux, N_boundary}(stag = stag, boundary = boundary, multithreading = multithreading, fl = fl, fr = fr, du = du, ut = ut)
 end

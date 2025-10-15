@@ -1,5 +1,3 @@
-
-
 @inline function weno_betas(u1, u2, u3, u4, u5, χ)
 
     β1 = @muladd χ[1] * (u1 - 2 * u2 + u3)^2 + χ[2] * (u1 - 4 * u2 + 3 * u3)^2

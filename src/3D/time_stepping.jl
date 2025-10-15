@@ -1,4 +1,3 @@
-
 """
     WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy, Δz) where T <: AbstractArray{<:Real, 3}
 
@@ -16,7 +15,7 @@ Advance the solution `u` by one time step using the 3rd-order SSP Runge-Kutta me
 Citation: Borges et al. 2008: "An improved weighted essentially non-oscillatory scheme for hyperbolic conservation laws"
           doi:10.1016/j.jcp.2007.11.038
 """
-function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy, Δz) where T <: AbstractArray{<:Real, 3}
+function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy, Δz) where {T <: AbstractArray{<:Real, 3}}
 
     nx, ny, nz = size(u, 1), size(u, 2), size(u, 3)
     Δx_, Δy_, Δz_ = inv(Δx), inv(Δy), inv(Δz)
@@ -26,21 +25,21 @@ function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy, Δz) where T <: Ab
     WENO_flux!(fl, fr, u, weno, nx, ny, nz)
     semi_discretisation_weno5!(du, v, weno, Δx_, Δy_, Δz_)
 
-    @inbounds @maybe_threads multithreading for I = CartesianIndices(ut)
+    @inbounds @maybe_threads multithreading for I in CartesianIndices(ut)
         ut[I] = @muladd u[I] - Δt * du[I]
     end
 
     WENO_flux!(fl, fr, ut, weno, nx, ny, nz)
     semi_discretisation_weno5!(du, v, weno, Δx_, Δy_, Δz_)
 
-    @inbounds @maybe_threads multithreading for I = CartesianIndices(ut)
+    @inbounds @maybe_threads multithreading for I in CartesianIndices(ut)
         ut[I] = @muladd 0.75 * u[I] + 0.25 * ut[I] - 0.25 * Δt * du[I]
     end
 
     WENO_flux!(fl, fr, ut, weno, nx, ny, nz)
     semi_discretisation_weno5!(du, v, weno, Δx_, Δy_, Δz_)
 
-    @inbounds @maybe_threads multithreading for I = CartesianIndices(u)
-        u[I] = @muladd 1.0/3.0 * u[I] + 2.0/3.0 * ut[I] - (2.0/3.0) * Δt * du[I]
+    return @inbounds @maybe_threads multithreading for I in CartesianIndices(u)
+        u[I] = @muladd 1.0 / 3.0 * u[I] + 2.0 / 3.0 * ut[I] - (2.0 / 3.0) * Δt * du[I]
     end
 end

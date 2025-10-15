@@ -3,8 +3,8 @@
         u0 = ones(3)
         weno = WENOScheme(u0)
         @test weno.γ == (0.1, 0.6, 0.3)
-        @test weno.χ == (13/12, 1/4)
-        @test weno.ζ == (1/3, 7/6, 11/6, 1/6, 5/6)
+        @test weno.χ == (13 / 12, 1 / 4)
+        @test weno.ζ == (1 / 3, 7 / 6, 11 / 6, 1 / 6, 5 / 6)
         @test weno.ϵ == eps(Float64)
         @test weno.boundary == (0, 0)
         @test all(weno.fl.x .== 0.0)
@@ -13,7 +13,7 @@
         @test all(weno.ut .== 0.0)
 
         # test type of input
-        u0 = [3f0]
+        u0 = [3.0f0]
         weno = WENOScheme(u0)
         @test typeof(weno.γ) == NTuple{3, Float32}
         @test eps(Float32) == weno.ϵ

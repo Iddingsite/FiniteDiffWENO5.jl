@@ -6,13 +6,13 @@
 
 FiniteDiffWENO5.jl is a Julia package that implements a finite difference fifth order Weighted Essentially Non-Oscillatory (WENO) method on regular grids for advection terms in partial differential equations for 1D, 2D, and 3D problems. The current implementation is based on the WENO-Z scheme from [Borges et al. (2008)](10.1016/j.jcp.2007.11.038).
 
-Currently, the package focuses on non-conservative form of the advection terms ($\mathbf{v} \cdot \nabla u$) on collocated grid, and conservative form ($\nabla \cdot (\mathbf{v} u)$) on staggered grid with the advection velocity located on the sides of the cells. The time integration is performed using a third-order Strong Stability Preserving Runge-Kutta (SSP-RK3) method.
+Currently, the package focuses on non-conservative form of the advection terms ($\mathbf{v} \cdot \nabla u$) on collocated grid, and conservative form ($\nabla \cdot \!(\mathbf{v} u)$) on staggered grid with the advection velocity located on the sides of the cells. The time integration is performed using a third-order Strong Stability Preserving Runge-Kutta (SSP-RK3) method.
 
 The core of the package is written in pure Julia, focusing on performance using CPUs but GPU support is available using KernelAbstractions.jl and Chmy.jl via an extension.
 
 ## Features
 
-The package currently provides only two main functions: `WENOScheme()`, that is used to create a WENO scheme struct containing all the necessary information for the WENO method, and `WENO_step!()`, that performs one step of the time integration using the WENO method. The grid and the initial condition must be defined by the user.
+The package currently provides only two main functions: `WENOScheme()`, that is used to create a WENO scheme struct containing all the necessary information for the WENO method, and `WENO_step!()`, that performs one step of the time integration using the WENO-Z method and a 3rd-order Runge-Kutta method. The grid and the initial condition must be defined by the user.
 
 ## Example
 

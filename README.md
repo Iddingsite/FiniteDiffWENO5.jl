@@ -16,6 +16,7 @@ The package currently provides only two main functions: `WENOScheme()`, that is 
 
 ## Example
 
+To see more examples, refer to the folder examples or the test folder.
 Here is a simple example of using the package to solve the 1D linear advection equation with periodic boundary conditions and classical initial conditions:
 
 ```julia
@@ -68,9 +69,11 @@ idx = (x .>= 0.4) .& (x .<= 0.6)
 u0_vec[idx] .= (1 / 6) .* (F(x[idx], α, a - δ) .+ 4 .* F(x[idx], α, a) .+ F(x[idx], α, a + δ))
 
 u = copy(u0_vec)
+# here we create a WENO scheme for staggered grid, boundary (2,2) means periodic BCs on both sides. 0 means homogeneous Neumann and 1 means homogeneous Dirichlet BCs. stag = true means that the advection velocity is defined on the sides of the cells and should be of size nx+1 compared to the scalar field u.
 weno = WENOScheme(u; boundary = (2, 2), stag = true)
 
-# advection velocity
+# advection velocity, here we use a constant velocity of 1.0.
+# It should be provided as a NamedTuple
 a = (; x = ones(nx + 1))
 
 # grid size
@@ -81,7 +84,9 @@ tmax = period * (Lx + Δx) / maximum(abs.(a.x))
 
 t = 0
 
+# timeloop
 while t < tmax
+    # here, u is updated in place and contains the solution at the next time step after the call to WENO_step!
     WENO_step!(u, a, weno, Δt, Δx)
 
     t += Δt

@@ -93,17 +93,17 @@ function WENO_step!(u::T_field, v::NamedTuple{(:x,), <:Tuple{<:T_field}}, weno::
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    ut .= muladd.(-Δt, du, u)
+    ut .= u .- Δt .* du
 
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    ut .= muladd.(-0.25 * Δt, du, 0.75 .* u .+ 0.25 .* ut)
+    ut .= 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    u .= muladd.(-2.0 / 3.0 * Δt, du, inv(3.0) .* u .+ 2.0 / 3.0 .* ut)
+    u .= inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
 
     return synchronize(backend)
 end

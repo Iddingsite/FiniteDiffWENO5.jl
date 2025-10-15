@@ -12,7 +12,7 @@ The core of the package is written in pure Julia, focusing on performance using 
 
 ## Features
 
-The package currently provides only two main functions: `WENOScheme()`, that is used to create a WENO scheme struct containing all the necessary information for the WENO method, and `WENO_step!()`, that performs one step of the time integration using the WENO-Z method and a 3rd-order Runge-Kutta method. The grid and the initial condition must be defined by the user.
+The package currently exports only two main functions: `WENOScheme()`, that is used to create a WENO scheme struct containing all the necessary information for the WENO method, and `WENO_step!()`, that performs one step of the time integration using the WENO-Z method and a 3rd-order Runge-Kutta method. The grid and the initial condition must be defined by the user.
 
 ## Example
 

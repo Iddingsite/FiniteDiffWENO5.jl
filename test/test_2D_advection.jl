@@ -70,7 +70,7 @@
         Δx = Lx / nx
         Δy = Lx / ny
 
-        grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
+        grid = UniformGrid(arch; origin = (0.0, 0.0), extent = (Lx, Lx), dims = (nx, ny))
 
         x = range(0, stop = Lx, length = nx)
 

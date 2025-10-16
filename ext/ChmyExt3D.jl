@@ -1,4 +1,4 @@
-@kernel function WENO_flux_chmy_3D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_chmy_3D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -49,7 +49,7 @@
     end
 end
 
-@kernel function WENO_flux_chmy_3D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_chmy_3D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -100,7 +100,7 @@ end
     end
 end
 
-@kernel function WENO_flux_chmy_3D_z(fl, fr, u, boundary, nz, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_chmy_3D_z(fl, fr, u, boundary, nz, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -151,7 +151,7 @@ end
     end
 end
 
-@kernel function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_, g::StructuredGrid, O)
 
     I = @index(Global, Cartesian)
 

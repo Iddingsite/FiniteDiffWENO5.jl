@@ -1,5 +1,5 @@
 
-@kernel function WENO_flux_chmy_1D(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_chmy_1D(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -46,7 +46,7 @@
     fr[i] = FiniteDiffWENO5.weno5_reconstruction_downwind(u2, u3, u4, u5, u6, χ, γ, ζ, ϵ)
 end
 
-@kernel function WENO_semi_discretisation_weno5_chmy_1D!(du, fl, fr, v, stag, Δx_, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_semi_discretisation_weno5_chmy_1D!(du, fl, fr, v, stag, Δx_, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -93,17 +93,17 @@ function WENO_step!(u::T_field, v::NamedTuple{(:x,), <:Tuple{<:T_field}}, weno::
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    interior(ut) .= interior(u) .- Δt .* interior(du)
+    interior(ut) .= @muladd interior(u) .- Δt .* interior(du)
 
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    interior(ut) .= 0.75 .* interior(u) .+ 0.25 .* interior(ut) .- 0.25 .* Δt .* interior(du)
+    interior(ut) .= @muladd 0.75 .* interior(u) .+ 0.25 .* interior(ut) .- 0.25 .* Δt .* interior(du)
 
     launch(arch, grid, WENO_flux_chmy_1D => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
     launch(arch, grid, WENO_semi_discretisation_weno5_chmy_1D! => (du, fl, fr, v, stag, Δx_, grid))
 
-    interior(u) .= inv(3.0) .* interior(u) .+ 2.0 / 3.0 .* interior(ut) .- 2.0 / 3.0 .* Δt .* interior(du)
+    interior(u) .= @muladd inv(3.0) .* interior(u) .+ 2.0 / 3.0 .* interior(ut) .- 2.0 / 3.0 .* Δt .* interior(du)
 
     return synchronize(backend)
 end

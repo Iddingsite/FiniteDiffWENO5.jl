@@ -20,7 +20,7 @@ Create a WENO scheme structure for the given field `u` on the specified `grid` u
 - `stag::Bool`: Whether the grid is staggered (velocities on cell faces) or not (velocities on cell centers).
 - `multithreading::Bool`: Whether to use multithreading (only for 2D and 3D). Default is false.
 """
-function WENOScheme(u::AbstractField{T, N}, grid; boundary = (2, 2), stag = true, multithreading=true) where {T, N}
+function WENOScheme(u::AbstractField{T, N}, grid; boundary = (2, 2), stag = true, multithreading = true) where {T, N}
 
     # check that boundary conditions are correctly defined
     @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."
@@ -46,16 +46,18 @@ function WENOScheme(u::AbstractField{T, N}, grid; boundary = (2, 2), stag = true
 end
 
 function WENOScheme(u::AbstractField; kwargs...)
-    error("""
-    You called `WENOScheme(u)` with a `$(typeof(u))`, which is a subtype of `AbstractField`.
+    error(
+        """
+        You called `WENOScheme(u)` with a `$(typeof(u))`, which is a subtype of `AbstractField`.
 
-    To construct a WENO scheme for Chmy.jl fields, you must also provide the computational grid:
-        WENOScheme(u, grid; kwargs...)
+        To construct a WENO scheme for Chmy.jl fields, you must also provide the computational grid:
+            WENOScheme(u, grid; kwargs...)
 
-    Example:
-        grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
-        weno = WENOScheme(u, grid; boundary=(2,2,2,2), stag=false)
-    """)
+        Example:
+            grid = UniformGrid(arch; origin=(0.0, 0.0), extent=(Lx, Lx), dims=(nx, ny))
+            weno = WENOScheme(u, grid; boundary=(2,2,2,2), stag=false)
+        """
+    )
 end
 
 include("ChmyExt1D.jl")

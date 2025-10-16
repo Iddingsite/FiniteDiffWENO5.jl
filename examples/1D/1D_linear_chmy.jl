@@ -1,12 +1,10 @@
 using FiniteDiffWENO5
-using GLMakie
+using CairoMakie
 using Chmy
 using KernelAbstractions
 
-# function main(backend=CPU(), nx=400)
+function main(backend=CPU(), nx=400)
 
-backend=CPU()
- nx=400
     arch = Arch(backend)
 
     x_min = -1.0
@@ -80,10 +78,12 @@ backend=CPU()
         end
     end
 
+    KernelAbstractions.synchronize(backend)
+
     f = Figure(size = (800, 600))
     ax = Axis(f[1, 1], title = "1D linear advection after $period periods", xlabel = "x", ylabel = "u")
     lines!(ax, x, u0_vec, label = "Exact", linestyle = :dash, color = :red)
-    scatter!(ax, x, interior(u), label = "WENO5")
+    scatter!(ax, x, interior(u) |> Array, label = "WENO5")
     xlims!(ax, x_min, x_max)
     axislegend(ax)
     display(f)

@@ -1,7 +1,7 @@
 using FiniteDiffWENO5
 using Chmy
 using KernelAbstractions
-using GLMakie
+using CairoMakie
 
 function main(;backend=CPU(), nx=50, ny=50, nz=50)
 
@@ -35,7 +35,12 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
     vy0 = ones(size(Y3D))
     vz0 = zeros(size(Z3D)) # Rotation in XY plane only
 
-    v = (; x=vx0, y=vy0, z=vz0)
+    v = (; x=Field(arch, grid, Center()),
+        y=Field(arch, grid, Center()),
+        z=Field(arch, grid, Center()))
+    set!(v.x, vy0)
+    set!(v.y, vx0)
+    set!(v.z, vz0)
 
     x0 = 1/4
     c = 0.08
@@ -56,7 +61,7 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
 
     f = Figure(size = (800, 600))
     ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
-    u_obser = Observable(u[:, :, div(nz, 2)])
+    u_obser = Observable(u0[:, :, div(nz, 2)])
     hm = heatmap!(ax, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1))
     Colorbar(f[1, 2], label = "u", hm)
     display(f)
@@ -69,15 +74,26 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
             Δt = tmax - t
         end
 
+
         if counter % 10 == 0
-            u_obser[] = u[:, :, div(nz, 2)]
-            ax.title = "t = $(round(t, digits=2))"
+            if backend == CPU()
+                KernelAbstractions.synchronize(backend)
+                u_obser[] = (interior(u) |> Array)[:, :, div(nz, 2)]
+                ax.title = "t = $(round(t, digits=2))"
+            end
         end
 
         counter += 1
     end
 
+    KernelAbstractions.synchronize(backend)
+    u_obser[] = (interior(u) |> Array)[:, :, div(nz, 2)]
+    ax.title = "t = $(round(t, digits=2))"
+
+    save("weno5_cuda.png", f);
 end
 
+# using CUDA
+# main(backend=CUDABackend())
 main()
 

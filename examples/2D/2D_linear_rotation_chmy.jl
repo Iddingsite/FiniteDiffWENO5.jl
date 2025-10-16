@@ -74,7 +74,8 @@ function main(;backend=CPU(), nx=400, ny=400)
         end
 
         if counter % 100 == 0
-            u_obser[] = u
+            KernelAbstractions.synchronize(backend)
+            u_obser[] = interior(u) |> Array
             ax.title = "t = $(round(t, digits=2))"
         end
 

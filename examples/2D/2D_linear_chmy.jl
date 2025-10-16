@@ -84,10 +84,11 @@ function main(;backend=CPU(), nx=400, ny=400, stag=true)
         end
 
         if counter % 100 == 0
+            KernelAbstractions.synchronize(backend)
 
             mass_ratio = (sum(u) * Δx * Δy) / mass_ini
 
-            u_obser[] = u
+            u_obser[] = interior(u) |> Array
             ax.title = "t = $(round(t, digits=2)), mass ratio = $(round(mass_ratio, digits=6))"
         end
 

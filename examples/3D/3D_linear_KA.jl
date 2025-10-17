@@ -30,10 +30,11 @@ function main(; backend = CPU(), nx = 50, ny = 50, nz = 50)
     vy0 = ones(size(Y3D))
     vz0 = zeros(size(Z3D)) # Rotation in XY plane only
 
-    v = (; x = KernelAbstractions.zeros(backend, Float64, nx, ny, nz),
-              y = KernelAbstractions.zeros(backend, Float64, nx, ny, nz),
-              z = KernelAbstractions.zeros(backend, Float64, nx, ny, nz)
-        )
+    v = (;
+        x = KernelAbstractions.zeros(backend, Float64, nx, ny, nz),
+        y = KernelAbstractions.zeros(backend, Float64, nx, ny, nz),
+        z = KernelAbstractions.zeros(backend, Float64, nx, ny, nz),
+    )
 
     copyto!(v.x, vx0)
     copyto!(v.y, vy0)

@@ -46,11 +46,14 @@ function main(; backend = CPU(), nx = 400, ny = 400, stag = true)
     weno = WENOScheme(u, backend; boundary = (2, 2, 2, 2), stag = stag, multithreading = true)
 
     if stag
-        v = (;x = KernelAbstractions.zeros(backend, Float64, nx+1, ny),
-              y = KernelAbstractions.zeros(backend, Float64, nx, ny+1))
+        v = (;
+            x = KernelAbstractions.zeros(backend, Float64, nx + 1, ny),
+            y = KernelAbstractions.zeros(backend, Float64, nx, ny + 1),
+        )
     else
-        v = (; x = KernelAbstractions.zeros(backend, Float64, nx, ny),
-              y = KernelAbstractions.zeros(backend, Float64, nx, ny)
+        v = (;
+            x = KernelAbstractions.zeros(backend, Float64, nx, ny),
+            y = KernelAbstractions.zeros(backend, Float64, nx, ny),
         )
     end
 

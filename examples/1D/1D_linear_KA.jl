@@ -55,7 +55,7 @@ function main(backend = CPU(), nx = 400)
 
     # advection velocity
     a_vec = ones(nx + 1) .* -1
-    a = (;x=KernelAbstractions.zeros(backend, Float64, nx + 1))
+    a = (; x = KernelAbstractions.zeros(backend, Float64, nx + 1))
     copyto!(a.x, a_vec)
 
 

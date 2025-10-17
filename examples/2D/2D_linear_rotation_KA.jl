@@ -38,8 +38,10 @@ function main(; backend = CPU(), nx = 400, ny = 400)
     weno = WENOScheme(u, backend; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
 
 
-    v = (; x = KernelAbstractions.zeros(backend, Float64, nx, ny),
-            y = KernelAbstractions.zeros(backend, Float64, nx, ny))
+    v = (;
+        x = KernelAbstractions.zeros(backend, Float64, nx, ny),
+        y = KernelAbstractions.zeros(backend, Float64, nx, ny),
+    )
 
     copyto!(v.x, vx0)
     copyto!(v.y, vy0)

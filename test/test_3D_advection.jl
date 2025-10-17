@@ -171,7 +171,14 @@
         vy0 = ones(size(Y3D))
         vz0 = zeros(size(Z3D)) # Rotation in XY plane only
 
-        v = (; x = vx0, y = vy0, z = vz0)
+        v = (;
+            x = Field(arch, grid, Center()),
+            y = Field(arch, grid, Center()),
+            z = Field(arch, grid, Center()),
+        )
+        set!(v.x, vy0)
+        set!(v.y, vx0)
+        set!(v.z, vz0)
 
         x0 = 1 / 4
         c = 0.08

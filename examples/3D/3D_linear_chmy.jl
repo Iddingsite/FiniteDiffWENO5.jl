@@ -3,7 +3,7 @@ using Chmy
 using KernelAbstractions
 using CairoMakie
 
-function main(;backend=CPU(), nx=50, ny=50, nz=50)
+function main(; backend = CPU(), nx = 50, ny = 50, nz = 50)
 
     arch = Arch(backend)
 
@@ -12,16 +12,16 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
     Δy = Lx / ny
     Δz = Lx / nz
 
-    grid = UniformGrid(arch; origin=(0.0, 0.0, 0.0), extent=(Lx, Lx, Lx), dims=(nx, ny, nz))
+    grid = UniformGrid(arch; origin = (0.0, 0.0, 0.0), extent = (Lx, Lx, Lx), dims = (nx, ny, nz))
 
     # Courant number
     CFL = 0.7
     period = 1
 
     # 3D grid
-    x = range(0, length=nx, stop=Lx)
-    y = range(0, length=ny, stop=Lx)
-    z = range(0, length=nz, stop=Lx)
+    x = range(0, length = nx, stop = Lx)
+    y = range(0, length = ny, stop = Lx)
+    z = range(0, length = nz, stop = Lx)
 
     X = reshape(x, 1, nx, 1) .* ones(ny, 1, nz)
     Y = reshape(y, ny, 1, 1) .* ones(1, nx, nz)
@@ -35,34 +35,36 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
     vy0 = ones(size(Y3D))
     vz0 = zeros(size(Z3D)) # Rotation in XY plane only
 
-    v = (; x=Field(arch, grid, Center()),
-        y=Field(arch, grid, Center()),
-        z=Field(arch, grid, Center()))
+    v = (;
+        x = Field(arch, grid, Center()),
+        y = Field(arch, grid, Center()),
+        z = Field(arch, grid, Center()),
+    )
     set!(v.x, vy0)
     set!(v.y, vx0)
     set!(v.z, vz0)
 
-    x0 = 1/4
+    x0 = 1 / 4
     c = 0.08
 
     u0 = zeros(ny, nx, nz)
     for I in CartesianIndices((ny, nx, nz))
-        u0[I] = exp(-((X3D[I]-x0)^2 + (Y3D[I]-x0)^2 + (Z3D[I]-0.5)^2) / c^2)
+        u0[I] = exp(-((X3D[I] - x0)^2 + (Y3D[I] - x0)^2 + (Z3D[I] - 0.5)^2) / c^2)
     end
 
     u = Field(backend, grid, Center())
     set!(u, u0)
-    weno = WENOScheme(u, grid; boundary=(2, 2, 2, 2, 2, 2), stag=false, multithreading=true)
+    weno = WENOScheme(u, grid; boundary = (2, 2, 2, 2, 2, 2), stag = false, multithreading = true)
 
-    Δt = CFL * min(Δx, Δy, Δz)^(5/3)
+    Δt = CFL * min(Δx, Δy, Δz)^(5 / 3)
     tmax = period * Lx / max(maximum(abs.(vx0)), maximum(abs.(vy0)), maximum(abs.(vz0)))
     t = 0
     counter = 0
 
     f = Figure(size = (800, 600))
-    ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
+    ax = Axis(f[1, 1], title = "t = $(round(t, digits = 2))")
     u_obser = Observable(u0[:, :, div(nz, 2)])
-    hm = heatmap!(ax, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1))
+    hm = heatmap!(ax, u_obser; colormap = cgrad(:roma, rev = true), colorrange = (0, 1))
     Colorbar(f[1, 2], label = "u", hm)
     display(f)
 
@@ -79,7 +81,7 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
             if backend == CPU()
                 KernelAbstractions.synchronize(backend)
                 u_obser[] = (interior(u) |> Array)[:, :, div(nz, 2)]
-                ax.title = "t = $(round(t, digits=2))"
+                ax.title = "t = $(round(t, digits = 2))"
             end
         end
 
@@ -88,12 +90,11 @@ function main(;backend=CPU(), nx=50, ny=50, nz=50)
 
     KernelAbstractions.synchronize(backend)
     u_obser[] = (interior(u) |> Array)[:, :, div(nz, 2)]
-    ax.title = "t = $(round(t, digits=2))"
+    ax.title = "t = $(round(t, digits = 2))"
 
-    save("weno5_cuda.png", f);
+    return save("weno5_cuda.png", f)
 end
 
 # using CUDA
 # main(backend=CUDABackend())
 main()
-

@@ -1,4 +1,3 @@
-
 @kernel inbounds = true function WENO_flux_chmy_1D(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
 
     I = @index(Global, NTuple)

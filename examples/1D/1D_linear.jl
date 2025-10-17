@@ -1,13 +1,13 @@
 using FiniteDiffWENO5
 using GLMakie
 
-function main(nx=400)
+function main(nx = 400)
 
     x_min = -1.0
     x_max = 1.0
     Lx = x_max - x_min
 
-    x = range(x_min, stop=x_max, length=nx)
+    x = range(x_min, stop = x_max, length = nx)
 
     # Courant number
     CFL = 0.4
@@ -16,20 +16,20 @@ function main(nx=400)
     # Parameters for Shu test
     z = -0.7
     δ = 0.005
-    β = log(2)/(36*δ^2)
+    β = log(2) / (36 * δ^2)
     a = 0.5
     α = 10
 
     # Functions
-    G(x, β, z) = exp.(-β .* (x .- z).^2)
-    F(x, α, a) = sqrt.(max.(1 .- α^2 .* (x .- a).^2, 0.0))
+    G(x, β, z) = exp.(-β .* (x .- z) .^ 2)
+    F(x, α, a) = sqrt.(max.(1 .- α^2 .* (x .- a) .^ 2, 0.0))
 
     # Grid x assumed defined
     u0_vec = zeros(length(x))
 
     # Gaussian-like smooth bump at x in [-0.8, -0.6]
     idx = (x .>= -0.8) .& (x .<= -0.6)
-    u0_vec[idx] .= (1/6) .* (G(x[idx], β, z - δ) .+ 4 .* G(x[idx], β, z) .+ G(x[idx], β, z + δ))
+    u0_vec[idx] .= (1 / 6) .* (G(x[idx], β, z - δ) .+ 4 .* G(x[idx], β, z) .+ G(x[idx], β, z + δ))
 
     # Heaviside step at x in [-0.4, -0.2]
     idx = (x .>= -0.4) .& (x .<= -0.2)
@@ -42,18 +42,18 @@ function main(nx=400)
 
     # Elliptic/smooth bell at x in [0.4, 0.6]
     idx = (x .>= 0.4) .& (x .<= 0.6)
-    u0_vec[idx] .= (1/6) .* (F(x[idx], α, a - δ) .+ 4 .* F(x[idx], α, a) .+ F(x[idx], α, a + δ))
+    u0_vec[idx] .= (1 / 6) .* (F(x[idx], α, a - δ) .+ 4 .* F(x[idx], α, a) .+ F(x[idx], α, a + δ))
 
 
     u = copy(u0_vec)
-    weno = WENOScheme(u; boundary=(2, 2), stag=true, multithreading=false)
+    weno = WENOScheme(u; boundary = (2, 2), stag = true, multithreading = false)
 
     # advection velocity
-    a = (;x=ones(nx+1))
+    a = (; x = ones(nx + 1))
 
     # grid size
     Δx = x[2] - x[1]
-    Δt = CFL*Δx^(5/3)
+    Δt = CFL * Δx^(5 / 3)
 
     tmax = period * (Lx + Δx) / maximum(abs.(a.x))
 
@@ -69,14 +69,14 @@ function main(nx=400)
         end
     end
 
-    f = Figure(size = (800, 600), dpi=400)
+    f = Figure(size = (800, 600), dpi = 400)
     ax = Axis(f[1, 1], title = "1D linear advection after $period periods", xlabel = "x", ylabel = "u")
     lines!(ax, x, u0_vec, label = "Exact", linestyle = :dash, color = :red)
     scatter!(ax, x, u, label = "WENO5")
     xlims!(ax, x_min, x_max)
     axislegend(ax)
     save("1D_linear_advection.png", f)
-    display(f)
+    return display(f)
 end
 
 main()

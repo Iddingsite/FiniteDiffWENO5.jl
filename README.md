@@ -99,4 +99,4 @@ end
 
 Which produces the following result:
 
-![](/docs/assets/1D_linear_advection.png)
+![](/docs/src/assets/1D_linear_advection.png)

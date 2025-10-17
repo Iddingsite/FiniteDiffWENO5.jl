@@ -37,8 +37,9 @@ function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx) where {T <: AbstractVec
     WENO_flux!(fl, fr, ut, weno, nx)
     semi_discretisation_weno5!(du, v, weno, Δx_)
 
-    return @inbounds @maybe_threads multithreading for i in axes(u, 1)
+    @inbounds @maybe_threads multithreading for i in axes(u, 1)
         u[i] = @muladd 1.0 / 3.0 * u[i] + 2.0 / 3.0 * ut[i] - (2.0 / 3.0) * Δt * du[i]
     end
 
+    return nothing
 end

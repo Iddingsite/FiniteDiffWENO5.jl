@@ -1,30 +1,30 @@
 using FiniteDiffWENO5
 using GLMakie
 
-function main(;nx=400, ny=400)
+function main(; nx = 400, ny = 400)
 
     Lx = 1.0
     Δx = Lx / nx
     Δy = Lx / ny
 
-    x = range(0, stop=Lx, length=nx)
+    x = range(0, stop = Lx, length = nx)
 
     # Courant number
     CFL = 0.7
     period = 1
 
     # Grid x assumed defined
-    x = range(0, length=nx, stop= Lx)
-    y = range(0, length=ny, stop= Lx)
+    x = range(0, length = nx, stop = Lx)
+    y = range(0, length = ny, stop = Lx)
     grid = (x .* ones(ny)', ones(nx) .* y')
 
     w = π
-    vx0 = w .* (grid[1] .- Lx/2)
-    vy0 = -w .* (grid[2] .- Lx/2)
+    vx0 = w .* (grid[1] .- Lx / 2)
+    vy0 = -w .* (grid[2] .- Lx / 2)
 
-    v = (;x=vy0, y=vx0)
+    v = (; x = vy0, y = vx0)
 
-    x0 = 1/4
+    x0 = 1 / 4
     c = 0.08
 
     u0 = zeros(ny, nx)
@@ -34,21 +34,21 @@ function main(;nx=400, ny=400)
     end
 
     u = copy(u0)
-    weno = WENOScheme(u; boundary=(2, 2, 2, 2), stag=false, multithreading=true)
+    weno = WENOScheme(u; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
 
 
     # grid size
-    Δt = CFL*min(Δx, Δy)^(5/3)
+    Δt = CFL * min(Δx, Δy)^(5 / 3)
 
-    tmax = period / (w/(2*π))
+    tmax = period / (w / (2 * π))
 
     t = 0
     counter = 0
 
     f = Figure(size = (800, 600))
-    ax = Axis(f[1, 1], title = "t = $(round(t, digits=2))")
+    ax = Axis(f[1, 1], title = "t = $(round(t, digits = 2))")
     u_obser = Observable(u0)
-    hm = heatmap!(ax, x, y, u_obser; colormap = cgrad(:roma, rev = true), colorrange=(0, 1))
+    hm = heatmap!(ax, x, y, u_obser; colormap = cgrad(:roma, rev = true), colorrange = (0, 1))
     Colorbar(f[1, 2], label = "u", hm)
     display(f)
 
@@ -64,13 +64,14 @@ function main(;nx=400, ny=400)
 
         if counter % 100 == 0
             u_obser[] = u
-            ax.title = "t = $(round(t, digits=2))"
+            ax.title = "t = $(round(t, digits = 2))"
         end
 
         counter += 1
 
     end
 
+    return
 end
 
-main(nx=400, ny=400)
+main(nx = 400, ny = 400)

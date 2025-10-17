@@ -12,3 +12,13 @@ makedocs(
         "API" => "API.md",
     ],
 )
+
+deploydocs(
+    repo = "github.com/JuliaGeodynamics/FiniteDiffWENO5.jl.git",
+    branch = "gh-pages",
+    target = "build",
+    devbranch = "main",
+    devurl = "dev",
+    forcepush=true,
+    push_preview = false,
+)

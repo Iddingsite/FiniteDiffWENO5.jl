@@ -42,7 +42,7 @@ Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of o
 - `du::Array{T, N}`: Semi-discretisation of the advection term.
 - `ut::Array{T, N}`: Temporary array for intermediate calculations using Runge-Kutta.
 """
-function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N * 2), stag::Bool = false, multithreading::Bool = false) where {T, N}
+function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N * 2), stag::Bool = false, multithreading::Bool = true) where {T, N}
 
     # check that boundary conditions are correctly defined
     @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."

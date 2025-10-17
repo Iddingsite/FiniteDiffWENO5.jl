@@ -1,7 +1,6 @@
-@kernel inbounds = true function WENO_flux_chmy_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_KA_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ)
 
     I = @index(Global, NTuple)
-    I = I + O
     i, j = I[1], I[2]
     n, m = size(fl)
 
@@ -50,10 +49,9 @@
 end
 
 
-@kernel inbounds = true function WENO_flux_chmy_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_KA_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ)
 
     I = @index(Global, NTuple)
-    I = I + O
     i, j = I[1], I[2]
     n, m = size(fl)
 
@@ -101,11 +99,10 @@ end
     end
 end
 
-@kernel inbounds = true function WENO_semi_discretisation_weno5_chmy_2D!(du, fl, fr, v, stag, Δx_, Δy_, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
 
     I = @index(Global, Cartesian)
 
-    I = I + O
     i, j = I[1], I[2]
 
     m, n = size(du)
@@ -132,48 +129,51 @@ end
 end
 
 """
-    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where T_field <: AbstractField{<:Real} where names
+    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where T_field <: AbstractField{<:Real} where names
 
 Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 2D.
 
 # Arguments
-- `u::T_field`: The current solution field to be updated in place.
-- `v::NamedTuple{names, <:Tuple{<:T_field}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x` and `:y`.
+- `u::T_KA`: The current solution field to be updated in place.
+- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x` and `:y`.
 - `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
 - `Δt`: The time step size.
 - `Δx`: The spatial grid size.
-- `grid::StructuredGrid`: The computational grid.
+- `Δy`: The spatial grid size.
+- `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
 """
-function WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, grid::StructuredGrid, arch) where {T_field <: AbstractArray{<:Real, 2}}
+function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where {T_KA <: AbstractArray{<:Real, 2}}
 
-    launch = Launcher(arch, grid)
+    @assert get_backend(u) == backend
+    @assert get_backend(v.x) == backend
+    @assert get_backend(v.y) == backend
 
     #! do things here for halos and such for clusters for boundaries probably
 
-    nx = grid.axes[1].length
-    ny = grid.axes[2].length
+    nx = size(u, 1)
+    ny = size(u, 2)
     Δx_ = inv(Δx)
     Δy_ = inv(Δy)
 
     @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
 
-    launch(arch, grid, WENO_flux_chmy_2D_x => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
+    WENO_flux_KA_2D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ)
+    WENO_flux_KA_2D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ)
+    WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
 
-    interior(ut) .= @muladd interior(u) .- Δt .* interior(du)
+    ut .= @muladd u .- Δt .* du
 
-    launch(arch, grid, WENO_flux_chmy_2D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
+    WENO_flux_chmy_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ)
+    WENO_flux_chmy_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ)
+    WENO_semi_discretisation_weno5_chmy_2D!(du, fl, fr, v, stag, Δx_, Δy_)
 
-    interior(ut) .= @muladd 0.75 .* interior(u) .+ 0.25 .* interior(ut) .- 0.25 .* Δt .* interior(du)
+    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
-    launch(arch, grid, WENO_flux_chmy_2D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_2D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_2D! => (du, fl, fr, v, stag, Δx_, Δy_, grid))
+    WENO_flux_chmy_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid)
+    WENO_flux_chmy_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid)
+    WENO_semi_discretisation_weno5_chmy_2D!(du, fl, fr, v, stag, Δx_, Δy_, grid)
 
-    interior(u) .= @muladd inv(3.0) .* interior(u) .+ 2.0 / 3.0 .* interior(ut) .- 2.0 / 3.0 .* Δt .* interior(du)
+    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
 
     return nothing
 end

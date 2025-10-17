@@ -1,4 +1,3 @@
-
 @kernel inbounds = true function WENO_flux_KA_1D(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)

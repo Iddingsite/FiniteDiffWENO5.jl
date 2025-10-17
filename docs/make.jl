@@ -19,6 +19,6 @@ deploydocs(
     target = "build",
     devbranch = "main",
     devurl = "dev",
-    forcepush=true,
+    forcepush = true,
     push_preview = false,
 )

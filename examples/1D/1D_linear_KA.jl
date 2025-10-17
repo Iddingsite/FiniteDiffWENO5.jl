@@ -2,7 +2,7 @@ using FiniteDiffWENO5
 using CairoMakie
 using KernelAbstractions
 
-# function main(backend = CPU(), nx = 400)
+function main(backend = CPU(), nx = 400)
 
     backend = CPU()
     nx = 400
@@ -50,13 +50,13 @@ using KernelAbstractions
 
 
     u = KernelAbstractions.zeros(backend, Float64, nx)
-    u .= u0_vec
-    weno = WENOScheme(u; boundary = (2, 2), stag = true)
+    copyto!(u, u0_vec)
+    weno = WENOScheme(u, backend; boundary = (2, 2), stag = true)
 
     # advection velocity
     a_vec = ones(nx + 1) .* -1
     a = (;x=KernelAbstractions.zeros(backend, Float64, nx + 1))
-    a.x .= a_vec
+    copyto!(a.x, a_vec)
 
 
     # grid size

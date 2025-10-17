@@ -25,9 +25,15 @@ abstract type AbstractWENO end
 end
 
 """
-    WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false,  multithreading::Bool=false) where {T, N}
+    WENOScheme(c0::Array{T, N}; boundary::NTuple=ntuple(i -> 0, N*2), stag::Bool=false,  multithreading::Bool=false) where {T, N}
 
 Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of order 5 constants and arrays for N-dimensional data of type T. The formulation is from Borges et al. 2008.
+
+# Arguments
+- `c0::Array{T, N}`: The input field for which the WENO scheme is to be created. Only used to get the type and size.
+- `boundary::NTuple{2N, Int}`: A tuple specifying the boundary conditions for each dimension (0: homogeneous Neumann, 1: homogeneous Dirichlet, 2: periodic). Default to homogeneous Neumann (0).
+- `stag::Bool`: Whether the grid is staggered (velocities on cell faces) or not (velocities on cell centers). Default to false.
+- `multithreading::Bool`: Whether to use multithreading (only for 2D and 3D). Default to true.
 
 # Fields
 - `γ::NTuple{3, T}`: Upwind and downwind constants.
@@ -42,7 +48,7 @@ Structure containing the Weighted Essentially Non-Oscillatory (WENO) scheme of o
 - `du::Array{T, N}`: Semi-discretisation of the advection term.
 - `ut::Array{T, N}`: Temporary array for intermediate calculations using Runge-Kutta.
 """
-function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N * 2), stag::Bool = false, multithreading::Bool = true) where {T, N}
+function WENOScheme(c0::Array{T, N}; boundary::NTuple = ntuple(i -> 0, N * 2), stag::Bool = false, multithreading::Bool = true) where {T, N}
 
     # check that boundary conditions are correctly defined
     @assert length(boundary) == 2N "Boundary conditions must be a tuple of length $(2N) for $(N)D data."
@@ -51,7 +57,7 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N
 
     # dimension labels
     labels = (:x, :y, :z)[1:min(N, 3)]
-    sizes = size(u0)
+    sizes = size(c0)
 
     # helper to expand size in a given dimension
     function flux_size(d)
@@ -63,10 +69,10 @@ function WENOScheme(u0::AbstractArray{T, N}; boundary::NTuple = ntuple(i -> 0, N
     fr = NamedTuple{labels}(ntuple(d -> zeros(T, flux_size(d)), min(N, 3)))
 
     # semi-discretisation array
-    du = zeros(T, size(u0))
+    du = zeros(T, size(c0))
 
     # temporary array for Runge-Kutta
-    ut = zeros(T, size(u0))
+    ut = zeros(T, size(c0))
 
     # boundary conditions tuple length
     N_boundary = 2 * N

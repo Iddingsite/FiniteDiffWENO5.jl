@@ -14,7 +14,7 @@ Advance the solution `u` by one time step using the 3rd-order SSP Runge-Kutta me
 Citation: Borges et al. 2008: "An improved weighted essentially non-oscillatory scheme for hyperbolic conservation laws"
           doi:10.1016/j.jcp.2007.11.038
 """
-function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy) where {T <: AbstractArray{<:Real, 2}}
+function WENO_step!(u::T, v, weno::WENOScheme, Δt, Δx, Δy) where {T <: Array{<:Real, 2}}
 
     nx, ny = size(u, 1), size(u, 2)
     Δx_, Δy_ = inv(Δx), inv(Δy)

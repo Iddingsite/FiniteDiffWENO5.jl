@@ -45,7 +45,7 @@ period = 4
 z = -0.7
 δ = 0.005
 β = log(2) / (36 * δ^2)
-a = 0.5
+v = 0.5
 α = 10
 
 # Functions
@@ -53,45 +53,45 @@ G(x, β, z) = exp.(-β .* (x .- z) .^ 2)
 F(x, α, a) = sqrt.(max.(1 .- α^2 .* (x .- a) .^ 2, 0.0))
 
 # Grid x assumed defined
-u0_vec = zeros(length(x))
+c0_vec = zeros(length(x))
 
 # Gaussian-like smooth bump at x in [-0.8, -0.6]
 idx = (x .>= -0.8) .& (x .<= -0.6)
-u0_vec[idx] .= (1 / 6) .* (G(x[idx], β, z - δ) .+ 4 .* G(x[idx], β, z) .+ G(x[idx], β, z + δ))
+c0_vec[idx] .= (1 / 6) .* (G(x[idx], β, z - δ) .+ 4 .* G(x[idx], β, z) .+ G(x[idx], β, z + δ))
 
 # Heaviside step at x in [-0.4, -0.2]
 idx = (x .>= -0.4) .& (x .<= -0.2)
-u0_vec[idx] .= 1.0
+c0_vec[idx] .= 1.0
 
 # Piecewise linear ramp at x in [0, 0.2]
 # Triangular spike at x=0.1, base width 0.2
 idx = abs.(x .- 0.1) .<= 0.1
-u0_vec[idx] .= 1 .- 10 .* abs.(x[idx] .- 0.1)
+c0_vec[idx] .= 1 .- 10 .* abs.(x[idx] .- 0.1)
 
 # Elliptic/smooth bell at x in [0.4, 0.6]
 idx = (x .>= 0.4) .& (x .<= 0.6)
-u0_vec[idx] .= (1 / 6) .* (F(x[idx], α, a - δ) .+ 4 .* F(x[idx], α, a) .+ F(x[idx], α, a + δ))
+c0_vec[idx] .= (1 / 6) .* (F(x[idx], α, v - δ) .+ 4 .* F(x[idx], α, v) .+ F(x[idx], α, v + δ))
 
-u = copy(u0_vec)
+c = copy(c0_vec)
 # here we create a WENO scheme for staggered grid, boundary (2,2) means periodic BCs on both sides. 0 means homogeneous Neumann and 1 means homogeneous Dirichlet BCs. stag = true means that the advection velocity is defined on the sides of the cells and should be of size nx+1 compared to the scalar field u.
-weno = WENOScheme(u; boundary = (2, 2), stag = true)
+weno = WENOScheme(c; boundary = (2, 2), stag = true)
 
 # advection velocity, here we use a constant velocity of 1.0.
 # It should be provided as a NamedTuple
-a = (; x = ones(nx + 1))
+v = (; x = ones(nx + 1))
 
 # grid size
 Δx = x[2] - x[1]
 Δt = CFL * Δx^(5 / 3)
 
-tmax = period * (Lx + Δx) / maximum(abs.(a.x))
+tmax = period * (Lx + Δx) / maximum(abs.(v.x))
 
 t = 0
 
 # timeloop
 while t < tmax
     # here, u is updated in place and contains the solution at the next time step after the call to WENO_step!
-    WENO_step!(u, a, weno, Δt, Δx)
+    WENO_step!(c, v, weno, Δt, Δx)
 
     t += Δt
 

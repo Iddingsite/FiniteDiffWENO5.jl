@@ -1,13 +1,12 @@
 using FiniteDiffWENO5
+using KernelAbstractions
 using GLMakie
 
-function main(; nx = 400, ny = 400)
+function main(; backend = CPU(), nx = 400, ny = 400)
 
     Lx = 1.0
     Δx = Lx / nx
     Δy = Lx / ny
-
-    x = range(0, stop = Lx, length = nx)
 
     # Courant number
     CFL = 0.7
@@ -16,13 +15,11 @@ function main(; nx = 400, ny = 400)
     # Grid x assumed defined
     x = range(0, length = nx, stop = Lx)
     y = range(0, length = ny, stop = Lx)
-    grid = (x .* ones(ny)', ones(nx) .* y')
+    grid_array = (x .* ones(ny)', ones(nx) .* y')
 
     w = π
-    vx0 = -w .* (grid[2] .- Lx / 2)
-    vy0 = w .* (grid[1] .- Lx / 2)
-
-    v = (; x = vx0, y = vy0)
+    vx0 = -w .* (grid_array[2] .- Lx / 2)
+    vy0 = w .* (grid_array[1] .- Lx / 2)
 
     x0 = 1 / 4
     c = 0.08
@@ -30,12 +27,22 @@ function main(; nx = 400, ny = 400)
     u0 = zeros(ny, nx)
 
     for I in CartesianIndices((ny, nx))
-        u0[I] = sign(exp(-((grid[1][I] - x0)^2 + (grid[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
+        u0[I] = sign(exp(-((grid_array[1][I] - x0)^2 + (grid_array[2][I]' - x0)^2) / c^2) - 0.5) * 0.5 + 0.5
     end
 
-    u = copy(u0)
-    weno = WENOScheme(u; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
+    u = KernelAbstractions.zeros(backend, Float64, nx, ny)
+    copyto!(u, u0)
 
+    weno = WENOScheme(u, backend; boundary = (2, 2, 2, 2), stag = false, multithreading = true)
+
+
+    v = (;
+        x = KernelAbstractions.zeros(backend, Float64, nx, ny),
+        y = KernelAbstractions.zeros(backend, Float64, nx, ny),
+    )
+
+    copyto!(v.x, vx0)
+    copyto!(v.y, vy0)
 
     # grid size
     Δt = CFL * min(Δx, Δy)^(5 / 3)
@@ -53,7 +60,7 @@ function main(; nx = 400, ny = 400)
     display(f)
 
     while t < tmax
-        WENO_step!(u, v, weno, Δt, Δx, Δy)
+        WENO_step!(u, v, weno, Δt, Δx, Δy, backend)
 
 
         t += Δt
@@ -63,15 +70,17 @@ function main(; nx = 400, ny = 400)
         end
 
         if counter % 100 == 0
-            u_obser[] = u
+            KernelAbstractions.synchronize(backend)
+            u_obser[] = u |> Array
             ax.title = "t = $(round(t, digits = 2))"
+            display(f)
         end
 
         counter += 1
 
     end
 
-    return
+    return nothing
 end
 
-main(nx = 400, ny = 400)
+main(backend = CPU(), nx = 400, ny = 400)

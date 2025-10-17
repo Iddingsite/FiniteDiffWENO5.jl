@@ -1,4 +1,4 @@
-@kernel inbounds = true function WENO_flux_chmy_3D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_KA_3D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -49,7 +49,7 @@
     end
 end
 
-@kernel inbounds = true function WENO_flux_chmy_3D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_KA_3D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -59,30 +59,30 @@ end
     if 1 <= i <= n && 1 <= j <= m && 1 <= k <= p
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[3] == 0       # homogeneous Dirichlet
             jwww = clamp(j - 3, 1, ny)
             jww = clamp(j - 2, 1, ny)
             jw = clamp(j - 1, 1, ny)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[3] == 1   # homogeneous Neumann
             jwww = max(j - 3, 1)
             jww = max(j - 2, 1)
             jw = max(j - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[3] == 2   # Periodic
             jwww = mod1(j - 3, ny)
             jww = mod1(j - 2, ny)
             jw = mod1(j - 1, ny)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[4] == 0
             je = clamp(j, 1, ny)
             jee = clamp(j + 1, 1, ny)
             jeee = clamp(j + 2, 1, ny)
-        elseif boundary[2] == 1
+        elseif boundary[4] == 1
             je = min(j, ny)
             jee = min(j + 1, ny)
             jeee = min(j + 2, ny)
-        elseif boundary[2] == 2
+        elseif boundary[4] == 2
             je = mod1(j, ny)
             jee = mod1(j + 1, ny)
             jeee = mod1(j + 2, ny)
@@ -100,7 +100,7 @@ end
     end
 end
 
-@kernel inbounds = true function WENO_flux_chmy_3D_z(fl, fr, u, boundary, nz, χ, γ, ζ, ϵ, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_flux_KA_3D_z(fl, fr, u, boundary, nz, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)
     I = I + O
@@ -110,30 +110,30 @@ end
     if 1 <= i <= n && 1 <= j <= m && 1 <= k <= p
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[5] == 0       # homogeneous Dirichlet
             kwww = clamp(k - 3, 1, nz)
             kww = clamp(k - 2, 1, nz)
             kw = clamp(k - 1, 1, nz)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[5] == 1   # homogeneous Neumann
             kwww = max(k - 3, 1)
             kww = max(k - 2, 1)
             kw = max(k - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[5] == 2   # Periodic
             kwww = mod1(k - 3, nz)
             kww = mod1(k - 2, nz)
             kw = mod1(k - 1, nz)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[6] == 0
             ke = clamp(k, 1, nz)
             kee = clamp(k + 1, 1, nz)
             keee = clamp(k + 2, 1, nz)
-        elseif boundary[2] == 1
+        elseif boundary[6] == 1
             ke = min(k, nz)
             kee = min(k + 1, nz)
             keee = min(k + 2, nz)
-        elseif boundary[2] == 2
+        elseif boundary[6] == 2
             ke = mod1(k, nz)
             kee = mod1(k + 1, nz)
             keee = mod1(k + 2, nz)
@@ -151,11 +151,11 @@ end
     end
 end
 
-@kernel inbounds = true function WENO_semi_discretisation_weno5_chmy_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_, g::StructuredGrid, O)
+@kernel inbounds = true function WENO_semi_discretisation_weno5_KA_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_, g, O)
 
     I = @index(Global, Cartesian)
-
     I = I + O
+
     i, j, k = I[1], I[2], I[3]
 
     m, n, p = size(du)
@@ -181,60 +181,4 @@ end
                 max(v.z[I], 0) * (fl.z[i, j, k + 1] - fl.z[I]) * Δz_ + min(v.z[I], 0) * (fr.z[i, j, k + 1] - fr.z[I]) * Δz_
         end
     end
-end
-
-"""
-    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, grid::StructuredGrid, arch) where T_field <: AbstractArray{<:Real, 3}
-
-Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 3D.
-
-# Arguments
-- `u::T_field`: The current solution field to be updated in place.
-- `v::NamedTuple{names, <:Tuple{<:T_field}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x`, `:y` and `:z`.
-- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
-- `Δt`: The time step size.
-- `Δx`: The spatial grid size.
-- `Δy`: The spatial grid size.
-- `Δz`: The spatial grid size.
-- `grid::StructuredGrid`: The computational grid.
-"""
-function WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, grid::StructuredGrid, arch) where {T_field <: AbstractArray{<:Real, 3}}
-
-    backend = get_backend(u)
-
-    launch = Launcher(arch, grid)
-
-    #! do things here for halos and such for clusters for boundaries probably
-
-    nx = grid.axes[1].length
-    ny = grid.axes[2].length
-    nz = grid.axes[3].length
-    Δx_ = inv(Δx)
-    Δy_ = inv(Δy)
-    Δz_ = inv(Δz)
-
-    @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
-
-    launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, u, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
-
-    interior(ut) .= @muladd interior(u) .- Δt .* interior(du)
-
-    launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
-
-    interior(ut) .= @muladd 0.75 .* interior(u) .+ 0.25 .* interior(ut) .- 0.25 .* Δt .* interior(du)
-
-    launch(arch, grid, WENO_flux_chmy_3D_x => (fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_y => (fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_flux_chmy_3D_z => (fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, grid))
-    launch(arch, grid, WENO_semi_discretisation_weno5_chmy_3D! => (du, fl, fr, v, stag, Δx_, Δy_, Δz_, grid))
-
-    interior(u) .= @muladd inv(3.0) .* interior(u) .+ 2.0 / 3.0 .* interior(ut) .- 2.0 / 3.0 .* Δt .* interior(du)
-
-    return synchronize(backend)
 end

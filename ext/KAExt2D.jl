@@ -1,6 +1,7 @@
-@kernel function WENO_flux_KA_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ)
+@kernel function WENO_flux_KA_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)
+    I = I + O
     i, j = I[1], I[2]
     n, m = size(fl)
 
@@ -49,9 +50,10 @@
 end
 
 
-@kernel function WENO_flux_KA_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ)
+@kernel function WENO_flux_KA_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ, g, O)
 
     I = @index(Global, NTuple)
+    I = I + O
     i, j = I[1], I[2]
     n, m = size(fl)
 
@@ -99,10 +101,10 @@ end
     end
 end
 
-@kernel function WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
+@kernel function WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_, g, O)
 
     I = @index(Global, Cartesian)
-
+    I = I + O
     i, j = I[1], I[2]
 
     m, n = size(du)
@@ -126,63 +128,4 @@ end
                 max(v.y[I], 0) * (fl.y[i, j + 1] - fl.y[I]) * Δy_ + min(v.y[I], 0) * (fr.y[i, j + 1] - fr.y[I]) * Δy_
         end
     end
-end
-
-"""
-    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where T_field <: AbstractField{<:Real} where names
-
-Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 2D.
-
-# Arguments
-- `u::T_KA`: The current solution field to be updated in place.
-- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x` and `:y`.
-- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
-- `Δt`: The time step size.
-- `Δx`: The spatial grid size.
-- `Δy`: The spatial grid size.
-- `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
-"""
-function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where {T_KA <: AbstractArray{<:Real, 2}}
-
-    @assert get_backend(u) == backend
-    @assert get_backend(v.x) == backend
-    @assert get_backend(v.y) == backend
-
-    #! do things here for halos and such for clusters for boundaries probably
-
-    nx = size(u, 1)
-    ny = size(u, 2)
-    Δx_ = inv(Δx)
-    Δy_ = inv(Δy)
-
-    @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
-
-    flx_l = size(fl.x)
-    fly_l = size(fl.y)
-    du_l = size(du)
-
-    kernel_flux_2D_x = WENO_flux_KA_2D_x(backend)
-    kernel_flux_2D_y = WENO_flux_KA_2D_y(backend)
-    kernel_semi_discretisation_2D = WENO_semi_discretisation_weno5_KA_2D!(backend)
-
-    kernel_flux_2D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
-    kernel_flux_2D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
-    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
-
-    ut .= @muladd u .- Δt .* du
-
-
-    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
-    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
-    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
-
-    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
-
-    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
-    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
-    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
-
-    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
-
-    return nothing
 end

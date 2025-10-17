@@ -6,6 +6,21 @@ using KernelAbstractions
 
 import FiniteDiffWENO5: WENOScheme, WENO_step!
 
+# stolen from Chmy.jl to reproduce the behaviour with KA.jl
+struct Offset{O} end
+
+Offset(o::Vararg{Integer}) = Offset{o}()
+Offset(o::Tuple{Vararg{Integer}}) = Offset{o}()
+Offset(o::CartesianIndex) = Offset{o.I}()
+Offset() = Offset{0}()
+
+Base.:+(::Offset{O1}, ::Offset{O2}) where {O1,O2} = Offset((O1 .+ O2)...)
+Base.:+(::Offset{O}, tp::Tuple{Vararg{Integer}}) where {O} = O .+ tp
+Base.:+(::Offset{O}, tp::CartesianIndex) where {O} = CartesianIndex(O .+ Tuple(tp))
+
+Base.:+(tp, off::Offset) = off + tp
+
+const Offset0 = Offset{(0,)}()
 
 """
 WENOScheme(c0::AbstractArray{T, N}, backend::Backend; boundary=(2, 2), stag=true) where {T, N}
@@ -56,5 +71,182 @@ end
 include("KAExt1D.jl")
 include("KAExt2D.jl")
 include("KAExt3D.jl")
+
+"""
+    WENO_step!(u::T_KA, v::NamedTuple{names, <:Tuple{<:T_KA}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, backend::Backend) where T_KA <: AbstractField{<:Real} where names
+
+Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 1D.
+
+# Arguments
+- `u::T_field`: The current solution field to be updated in place.
+- `v::NamedTuple{names, <:Tuple{<:T_field}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with field `:x`.
+- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
+- `Δt`: The time step size.
+- `Δx`: The spatial grid size.
+- `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
+"""
+function WENO_step!(u::T_KA, v::NamedTuple{(:x,), <:Tuple{<:T_KA}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, backend::Backend) where {T_KA <: AbstractVector{<:Real}}
+
+    @assert get_backend(u) == backend
+    @assert get_backend(v.x) == backend
+
+    #! do things here for halos and such for clusters for boundaries probably
+
+    @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
+
+    nx = size(u, 1)
+    Δx_ = inv(Δx)
+
+    kernel_flux_1D = WENO_flux_KA_1D(backend)
+    kernel_semi_discretisation_1D = WENO_semi_discretisation_weno5_KA_1D!(backend)
+
+    kernel_flux_1D(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = length(fl.x))
+    kernel_semi_discretisation_1D(du, fl, fr, v, stag, Δx_, nothing, Offset0, ndrange = length(du))
+
+    ut .= @muladd u .- Δt .* du
+
+    kernel_flux_1D(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ,nothing, Offset0, ndrange = length(fl.x))
+    kernel_semi_discretisation_1D(du, fl, fr, v, stag, Δx_, nothing, Offset0, ndrange = length(du))
+
+    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
+
+    kernel_flux_1D(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ,nothing, Offset0, ndrange = length(fl.x))
+    kernel_semi_discretisation_1D(du, fl, fr, v, stag, Δx_, nothing, Offset0, ndrange = length(du))
+
+    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
+
+    return nothing
+end
+
+
+"""
+    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where T_field <: AbstractField{<:Real} where names
+
+Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 2D.
+
+# Arguments
+- `u::T_KA`: The current solution field to be updated in place.
+- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x` and `:y`.
+- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
+- `Δt`: The time step size.
+- `Δx`: The spatial grid size.
+- `Δy`: The spatial grid size.
+- `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
+"""
+function WENO_step!(u::T_KA, v::NamedTuple{(:x, :y), <:Tuple{<:AbstractArray{<:Real}, <:AbstractArray{<:Real}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where {T_KA <: AbstractArray{<:Real, 2}}
+
+    @assert get_backend(u) == backend
+    @assert get_backend(v.x) == backend
+    @assert get_backend(v.y) == backend
+
+    #! do things here for halos and such for clusters for boundaries probably
+
+    nx = size(u, 1)
+    ny = size(u, 2)
+    Δx_ = inv(Δx)
+    Δy_ = inv(Δy)
+
+    @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
+
+    flx_l = size(fl.x)
+    fly_l = size(fl.y)
+    du_l = size(du)
+
+    kernel_flux_2D_x = WENO_flux_KA_2D_x(backend)
+    kernel_flux_2D_y = WENO_flux_KA_2D_y(backend)
+    kernel_semi_discretisation_2D = WENO_semi_discretisation_weno5_KA_2D!(backend)
+
+    kernel_flux_2D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, nothing, Offset0, ndrange = du_l)
+
+    ut .= @muladd u .- Δt .* du
+
+
+    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, nothing, Offset0, ndrange = du_l)
+
+    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
+
+    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, nothing, Offset0, ndrange = du_l)
+
+    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
+
+    return nothing
+end
+
+
+
+"""
+    WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, grid::StructuredGrid, arch) where T_KA <: AbstractArray{<:Real, 3}
+
+Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 3D.
+
+# Arguments
+- `u::T_KA`: The current solution field to be updated in place.
+- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x`, `:y` and `:z`.
+- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
+- `Δt`: The time step size.
+- `Δx`: The spatial grid size.
+- `Δy`: The spatial grid size.
+- `Δz`: The spatial grid size.
+- `backend::Backend`: The computational backend to use (e.g., CPU, GPU).
+"""
+function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, backend::Backend) where {T_KA <: AbstractArray{<:Real, 3}}
+
+    @assert get_backend(u) == backend
+    @assert get_backend(v.x) == backend
+    @assert get_backend(v.y) == backend
+    @assert get_backend(v.z) == backend
+
+    #! do things here for halos and such for clusters for boundaries probably
+
+    nx = size(u, 1)
+    ny = size(u, 2)
+    nz = size(u, 3)
+    Δx_ = inv(Δx)
+    Δy_ = inv(Δy)
+    Δz_ = inv(Δz)
+
+    @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
+
+    flx_l = size(fl.x)
+    fly_l = size(fl.y)
+    flz_l = size(fl.z)
+    du_l = size(du)
+
+    kernel_flux_3D_x = WENO_flux_KA_3D_x(backend)
+    kernel_flux_3D_y = WENO_flux_KA_3D_y(backend)
+    kernel_flux_3D_z = WENO_flux_KA_3D_z(backend)
+    kernel_semi_discretisation_3D = WENO_semi_discretisation_weno5_KA_3D!(backend)
+
+
+    kernel_flux_3D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, u, boundary, nz, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, nothing, Offset0, ndrange = du_l)
+
+    ut .= @muladd u .- Δt .* du
+
+    kernel_flux_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, nothing, Offset0, ndrange= flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, nothing, Offset0, ndrange = du_l)
+
+    ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
+
+    kernel_flux_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, nothing, Offset0, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, nothing, Offset0, ndrange= flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, nothing, Offset0, ndrange = du_l)
+
+    u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
+
+    return nothing
+end
+
 
 end

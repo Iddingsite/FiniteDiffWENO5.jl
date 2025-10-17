@@ -1,14 +1,8 @@
 using FiniteDiffWENO5
-using Chmy
 using KernelAbstractions
 using CairoMakie
 
 function main(; backend = CPU(), nx = 50, ny = 50, nz = 50)
-
-    # backend = CPU()
-    # nx = 50
-    # ny = 50
-    # nz = 50
 
     Lx = 1.0
     Δx = Lx / nx

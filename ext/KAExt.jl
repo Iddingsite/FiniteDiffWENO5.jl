@@ -55,5 +55,6 @@ end
 
 include("KAExt1D.jl")
 include("KAExt2D.jl")
+include("KAExt3D.jl")
 
 end

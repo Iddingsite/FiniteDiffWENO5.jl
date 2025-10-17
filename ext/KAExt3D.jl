@@ -57,30 +57,30 @@ end
     if 1 <= i <= n && 1 <= j <= m && 1 <= k <= p
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[3] == 0       # homogeneous Dirichlet
             jwww = clamp(j - 3, 1, ny)
             jww = clamp(j - 2, 1, ny)
             jw = clamp(j - 1, 1, ny)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[3] == 1   # homogeneous Neumann
             jwww = max(j - 3, 1)
             jww = max(j - 2, 1)
             jw = max(j - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[3] == 2   # Periodic
             jwww = mod1(j - 3, ny)
             jww = mod1(j - 2, ny)
             jw = mod1(j - 1, ny)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[4] == 0
             je = clamp(j, 1, ny)
             jee = clamp(j + 1, 1, ny)
             jeee = clamp(j + 2, 1, ny)
-        elseif boundary[2] == 1
+        elseif boundary[4] == 1
             je = min(j, ny)
             jee = min(j + 1, ny)
             jeee = min(j + 2, ny)
-        elseif boundary[2] == 2
+        elseif boundary[4] == 2
             je = mod1(j, ny)
             jee = mod1(j + 1, ny)
             jeee = mod1(j + 2, ny)
@@ -107,30 +107,30 @@ end
     if 1 <= i <= n && 1 <= j <= m && 1 <= k <= p
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[5] == 0       # homogeneous Dirichlet
             kwww = clamp(k - 3, 1, nz)
             kww = clamp(k - 2, 1, nz)
             kw = clamp(k - 1, 1, nz)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[5] == 1   # homogeneous Neumann
             kwww = max(k - 3, 1)
             kww = max(k - 2, 1)
             kw = max(k - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[5] == 2   # Periodic
             kwww = mod1(k - 3, nz)
             kww = mod1(k - 2, nz)
             kw = mod1(k - 1, nz)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[6] == 0
             ke = clamp(k, 1, nz)
             kee = clamp(k + 1, 1, nz)
             keee = clamp(k + 2, 1, nz)
-        elseif boundary[2] == 1
+        elseif boundary[6] == 1
             ke = min(k, nz)
             kee = min(k + 1, nz)
             keee = min(k + 2, nz)
-        elseif boundary[2] == 2
+        elseif boundary[6] == 2
             ke = mod1(k, nz)
             kee = mod1(k + 1, nz)
             keee = mod1(k + 2, nz)
@@ -212,24 +212,35 @@ function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy,
 
     @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
 
-    WENO_flux_KA_3D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_z(fl.z, fr.z, u, boundary, nz, χ, γ, ζ, ϵ)
-    WENO_semi_discretisation_weno5_KA_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_)
+    flx_l = size(fl.x)
+    fly_l = size(fl.y)
+    flz_l = size(fl.z)
+    du_l = size(du)
+
+    kernel_flux_3D_x = WENO_flux_KA_3D_x(backend)
+    kernel_flux_3D_y = WENO_flux_KA_3D_y(backend)
+    kernel_flux_3D_z = WENO_flux_KA_3D_z(backend)
+    kernel_semi_discretisation_3D = WENO_semi_discretisation_weno5_KA_3D!(backend)
+
+
+    kernel_flux_3D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, u, boundary, nz, χ, γ, ζ, ϵ, ndrange= flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, ndrange = du_l)
 
     ut .= @muladd u .- Δt .* du
 
-    WENO_flux_KA_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ)
-    WENO_semi_discretisation_weno5_KA_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_)
+    kernel_flux_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, ndrange= flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, ndrange = du_l)
 
     ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
-    WENO_flux_KA_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ)
-    WENO_flux_KA_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ)
-    WENO_semi_discretisation_weno5_KA_3D!(du, fl, fr, v, stag, Δx_, Δy_, Δz_)
+    kernel_flux_3D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_3D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_flux_3D_z(fl.z, fr.z, ut, boundary, nz, χ, γ, ζ, ϵ, ndrange= flz_l)
+    kernel_semi_discretisation_3D(du, fl, fr, v, stag, Δx_, Δy_, Δz_, ndrange = du_l)
 
     u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
 

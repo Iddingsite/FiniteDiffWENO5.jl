@@ -60,30 +60,30 @@ end
     if 1 <= i <= n && 1 <= j <= m
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[3] == 0       # homogeneous Dirichlet
             jwww = clamp(j - 3, 1, ny)
             jww = clamp(j - 2, 1, ny)
             jw = clamp(j - 1, 1, ny)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[3] == 1   # homogeneous Neumann
             jwww = max(j - 3, 1)
             jww = max(j - 2, 1)
             jw = max(j - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[3] == 2   # Periodic
             jwww = mod1(j - 3, ny)
             jww = mod1(j - 2, ny)
             jw = mod1(j - 1, ny)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[4] == 0
             je = clamp(j, 1, ny)
             jee = clamp(j + 1, 1, ny)
             jeee = clamp(j + 2, 1, ny)
-        elseif boundary[2] == 1
+        elseif boundary[4] == 1
             je = min(j, ny)
             jee = min(j + 1, ny)
             jeee = min(j + 2, ny)
-        elseif boundary[2] == 2
+        elseif boundary[4] == 2
             je = mod1(j, ny)
             jee = mod1(j + 1, ny)
             jeee = mod1(j + 2, ny)

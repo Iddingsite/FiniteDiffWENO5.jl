@@ -1,4 +1,4 @@
-@kernel inbounds = true function WENO_flux_KA_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ)
+@kernel function WENO_flux_KA_2D_x(fl, fr, u, boundary, nx, χ, γ, ζ, ϵ)
 
     I = @index(Global, NTuple)
     i, j = I[1], I[2]
@@ -49,7 +49,7 @@
 end
 
 
-@kernel inbounds = true function WENO_flux_KA_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ)
+@kernel function WENO_flux_KA_2D_y(fl, fr, u, boundary, ny, χ, γ, ζ, ϵ)
 
     I = @index(Global, NTuple)
     i, j = I[1], I[2]
@@ -58,30 +58,30 @@ end
     if 1 <= i <= n && 1 <= j <= m
 
         # Left boundary condition
-        if boundary[1] == 0       # homogeneous Dirichlet
+        if boundary[3] == 0       # homogeneous Dirichlet
             jwww = clamp(j - 3, 1, ny)
             jww = clamp(j - 2, 1, ny)
             jw = clamp(j - 1, 1, ny)
-        elseif boundary[1] == 1   # homogeneous Neumann
+        elseif boundary[3] == 1   # homogeneous Neumann
             jwww = max(j - 3, 1)
             jww = max(j - 2, 1)
             jw = max(j - 1, 1)
-        elseif boundary[1] == 2   # Periodic
+        elseif boundary[3] == 2   # Periodic
             jwww = mod1(j - 3, ny)
             jww = mod1(j - 2, ny)
             jw = mod1(j - 1, ny)
         end
 
         # Right boundary condition
-        if boundary[2] == 0
+        if boundary[4] == 0
             je = clamp(j, 1, ny)
             jee = clamp(j + 1, 1, ny)
             jeee = clamp(j + 2, 1, ny)
-        elseif boundary[2] == 1
+        elseif boundary[4] == 1
             je = min(j, ny)
             jee = min(j + 1, ny)
             jeee = min(j + 2, ny)
-        elseif boundary[2] == 2
+        elseif boundary[4] == 2
             je = mod1(j, ny)
             jee = mod1(j + 1, ny)
             jeee = mod1(j + 2, ny)
@@ -99,7 +99,7 @@ end
     end
 end
 
-@kernel inbounds = true function WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
+@kernel function WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
 
     I = @index(Global, Cartesian)
 
@@ -157,21 +157,30 @@ function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy,
 
     @unpack ut, du, fl, fr, stag, boundary, χ, γ, ζ, ϵ = weno
 
-    WENO_flux_KA_2D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ)
-    WENO_flux_KA_2D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ)
-    WENO_semi_discretisation_weno5_KA_2D!(du, fl, fr, v, stag, Δx_, Δy_)
+    flx_l = size(fl.x)
+    fly_l = size(fl.y)
+    du_l = size(du)
+
+    kernel_flux_2D_x = WENO_flux_KA_2D_x(backend)
+    kernel_flux_2D_y = WENO_flux_KA_2D_y(backend)
+    kernel_semi_discretisation_2D = WENO_semi_discretisation_weno5_KA_2D!(backend)
+
+    kernel_flux_2D_x(fl.x, fr.x, u, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, u, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
 
     ut .= @muladd u .- Δt .* du
 
-    WENO_flux_chmy_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ)
-    WENO_flux_chmy_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ)
-    WENO_semi_discretisation_weno5_chmy_2D!(du, fl, fr, v, stag, Δx_, Δy_)
+
+    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
 
     ut .= @muladd 0.75 .* u .+ 0.25 .* ut .- 0.25 .* Δt .* du
 
-    WENO_flux_chmy_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, grid)
-    WENO_flux_chmy_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, grid)
-    WENO_semi_discretisation_weno5_chmy_2D!(du, fl, fr, v, stag, Δx_, Δy_, grid)
+    kernel_flux_2D_x(fl.x, fr.x, ut, boundary, nx, χ, γ, ζ, ϵ, ndrange = flx_l)
+    kernel_flux_2D_y(fl.y, fr.y, ut, boundary, ny, χ, γ, ζ, ϵ, ndrange = fly_l)
+    kernel_semi_discretisation_2D(du, fl, fr, v, stag, Δx_, Δy_, ndrange = du_l)
 
     u .= @muladd inv(3.0) .* u .+ 2.0 / 3.0 .* ut .- 2.0 / 3.0 .* Δt .* du
 

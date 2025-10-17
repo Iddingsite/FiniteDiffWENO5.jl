@@ -18,10 +18,8 @@ function main(; backend = CPU(), nx = 400, ny = 400)
     grid_array = (x .* ones(ny)', ones(nx) .* y')
 
     w = π
-    vx0 = w .* (grid_array[1] .- Lx / 2)
-    vy0 = -w .* (grid_array[2] .- Lx / 2)
-
-    v = (; x = vy0, y = vx0)
+    vx0 = -w .* (grid_array[2] .- Lx / 2)
+    vy0 = w .* (grid_array[1] .- Lx / 2)
 
     x0 = 1 / 4
     c = 0.08

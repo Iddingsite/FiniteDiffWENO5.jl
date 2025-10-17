@@ -19,10 +19,10 @@ function main(; nx = 400, ny = 400)
     grid = (x .* ones(ny)', ones(nx) .* y')
 
     w = π
-    vx0 = w .* (grid[1] .- Lx / 2)
-    vy0 = -w .* (grid[2] .- Lx / 2)
+    vx0 = -w .* (grid[2] .- Lx / 2)
+    vy0 = w .* (grid[1] .- Lx / 2)
 
-    v = (; x = vy0, y = vx0)
+    v = (; x = vx0, y = vy0)
 
     x0 = 1 / 4
     c = 0.08

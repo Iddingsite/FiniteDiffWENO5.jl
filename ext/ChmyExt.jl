@@ -85,7 +85,7 @@ Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method
 - `weno::WENOScheme`: WENO scheme structure containing necessary parameters and fields.
 - `Δt`: Time step size.
 - `Δx`: Spatial grid size.
-- `grid::StructuredGrid`: Computational grid from Chmy
+- `grid::StructuredGrid`: Computational grid from Chmy.
 """
 function WENO_step!(u::T_field, v::NamedTuple{(:x,), <:Tuple{<:AbstractField{<:Real, 1}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, grid::StructuredGrid, arch) where {T_field <: AbstractField{<:Real, 1}}
 
@@ -134,7 +134,7 @@ Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method
 - `weno::WENOScheme`: WENO scheme structure containing necessary parameters and fields.
 - `Δt`: Time step size.
 - `Δx`: Spatial grid size.
-- `grid::StructuredGrid`: Computational grid.
+- `grid::StructuredGrid`: Computational grid from Chmy.
 """
 function WENO_step!(u::T_field, v::NamedTuple{(:x, :y), <:Tuple{Vararg{AbstractField{<:Real}, 2}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, grid::StructuredGrid, arch) where {T_field <: AbstractField{<:Real, 2}}
 
@@ -191,7 +191,7 @@ Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method
 - `Δx`: Spatial grid size.
 - `Δy`: Spatial grid size.
 - `Δz`: Spatial grid size.
-- `grid::StructuredGrid`: Computational grid.
+- `grid::StructuredGrid`: Computational grid from Chmy.
 """
 function WENO_step!(u::T_field, v::NamedTuple{(:x, :y, :z), <:Tuple{Vararg{AbstractField{<:Real}, 3}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, grid::StructuredGrid, arch) where {T_field <: AbstractArray{<:Real, 3}}
 

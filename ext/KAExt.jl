@@ -73,7 +73,10 @@ include("KAExt2D.jl")
 include("KAExt3D.jl")
 
 """
-    WENO_step!(u::T_KA, v::NamedTuple{names, <:Tuple{<:T_KA}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, backend::Backend) where T_KA <: AbstractField{<:Real} where names
+    WENO_step!(u::T_KA,
+               v::NamedTuple{names, <:Tuple{<:T_KA}},
+               weno::FiniteDiffWENO5.WENOScheme, Δt, Δx,
+               backend::Backend) where T_KA <: AbstractField{<:Real} where names
 
 Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 1D.
 
@@ -85,7 +88,7 @@ Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method
 - `Δx`: The spatial grid size.
 - `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
 """
-function WENO_step!(u::T_KA, v::NamedTuple{(:x,), <:Tuple{<:T_KA}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, backend::Backend) where {T_KA <: AbstractVector{<:Real}}
+function WENO_step!(u::T_KA, v::NamedTuple{(:x,), <:Tuple{<:AbstractArray{<:Real}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, backend::Backend) where {T_KA <: AbstractVector{<:Real}}
 
     @assert get_backend(u) == backend
     @assert get_backend(v.x) == backend
@@ -120,20 +123,24 @@ end
 
 
 """
-    WENO_step!(u::T_field, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where T_field <: AbstractField{<:Real} where names
+    WENO_step!(u::T_field,
+               v::NamedTuple{(:x, :y), <:Tuple{Vararg{AbstractArray{<:Real}, 2}}},
+               weno::FiniteDiffWENO5.WENOScheme,
+               Δt, Δx, Δy,
+               backend::Backend) where T_field <: AbstractField{<:Real} where names
 
 Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 2D.
 
 # Arguments
-- `u::T_KA`: The current solution field to be updated in place.
-- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x` and `:y`.
-- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
-- `Δt`: The time step size.
-- `Δx`: The spatial grid size.
-- `Δy`: The spatial grid size.
-- `backend::Backend`: The KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
+- `u::T_KA`: Current solution field to be updated in place.
+- `v::NamedTuple{(:x, :y), <:Tuple{Vararg{AbstractArray{<:Real}, 2}}}`: Velocity field (can be staggered or not based on `weno.stag`).
+- `weno::WENOScheme`: WENO scheme structure containing necessary parameters and fields.
+- `Δt`: Time step size.
+- `Δx`: Spatial grid size.
+- `Δy`: Spatial grid size.
+- `backend::Backend`: KernelAbstractions backend in use (e.g., CPU(), CUDABackend(), etc.).
 """
-function WENO_step!(u::T_KA, v::NamedTuple{(:x, :y), <:Tuple{<:AbstractArray{<:Real}, <:AbstractArray{<:Real}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where {T_KA <: AbstractArray{<:Real, 2}}
+function WENO_step!(u::T_KA, v::NamedTuple{(:x, :y), <:Tuple{Vararg{AbstractArray{<:Real}, 2}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, backend::Backend) where {T_KA <: AbstractArray{<:Real, 2}}
 
     @assert get_backend(u) == backend
     @assert get_backend(v.x) == backend
@@ -180,21 +187,25 @@ end
 
 
 """
-    WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, grid::StructuredGrid, arch) where T_KA <: AbstractArray{<:Real, 3}
+    WENO_step!(u::T_KA,
+               v::NamedTuple{(:x, :y, :z), <:Tuple{Vararg{AbstractArray{<:Real}, 3}}},
+               weno::FiniteDiffWENO5.WENOScheme,
+               Δt, Δx, Δy, Δz,
+               backend::Backend) where T_KA <: AbstractArray{<:Real, 3}
 
 Advance the solution `u` by one time step using the 3rd-order Runge-Kutta method with WENO5 spatial discretization using Chmy.jl fields in 3D.
 
 # Arguments
-- `u::T_KA`: The current solution field to be updated in place.
-- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: The velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x`, `:y` and `:z`.
-- `weno::WENOScheme`: The WENO scheme structure containing necessary parameters and fields.
-- `Δt`: The time step size.
-- `Δx`: The spatial grid size.
-- `Δy`: The spatial grid size.
-- `Δz`: The spatial grid size.
-- `backend::Backend`: The computational backend to use (e.g., CPU, GPU).
+- `u::T_KA`: Current solution field to be updated in place.
+- `v::NamedTuple{names, <:Tuple{<:T_KA}}`: Velocity field (can be staggered or not based on `weno.stag`). Needs to be a NamedTuple with fields `:x`, `:y` and `:z`.
+- `weno::WENOScheme`: WENO scheme structure containing necessary parameters and fields.
+- `Δt`: Time step size.
+- `Δx`: Spatial grid size.
+- `Δy`: Spatial grid size.
+- `Δz`: Spatial grid size.
+- `backend::Backend`: Computational backend to use (e.g., CPU, GPU).
 """
-function WENO_step!(u::T_KA, v, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, backend::Backend) where {T_KA <: AbstractArray{<:Real, 3}}
+function WENO_step!(u::T_KA, v::NamedTuple{(:x, :y, :z), <:Tuple{Vararg{AbstractArray{<:Real}, 3}}}, weno::FiniteDiffWENO5.WENOScheme, Δt, Δx, Δy, Δz, backend::Backend) where {T_KA <: AbstractArray{<:Real, 3}}
 
     @assert get_backend(u) == backend
     @assert get_backend(v.x) == backend

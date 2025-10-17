@@ -4,7 +4,6 @@ using Documenter, FiniteDiffWENO5
 
 makedocs(
     sitename = "FiniteDiffWENO5",
-    remotes = nothing,
     authors = "Hugo Dominguez",
     pages = [
         "Home" => "index.md",

@@ -12,7 +12,7 @@ FiniteDiffWENO5.jl is a Julia package that implements a finite difference fifth 
 
 Currently, the package focuses on non-conservative form of the advection terms ($\mathbf{v} \cdot \nabla u$) on collocated grid, and conservative form ($\nabla \cdot$ ($\mathbf{v} u$)) on staggered grid with the advection velocity located on the sides of the cells. The time integration is performed using a third-order Strong Stability Preserving Runge-Kutta (SSP-RK3) method.
 
-The core of the package is written in pure Julia, focusing on performance using CPUs but GPU support is available using KernelAbstractions.jl and Chmy.jl via an extension.
+The core of the package is written in pure Julia, focusing on performance using CPUs but GPU support is available using KernelAbstractions.jl and Chmy.jl via 2 separate extensions.
 
 ## Features
 

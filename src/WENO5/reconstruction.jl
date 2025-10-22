@@ -58,6 +58,11 @@ end
     ω2 = α2 * _αsum
     ω3 = α3 * _αsum
 
+    # check if any weights is negative
+    if ω1 < 0 || ω2 < 0 || ω3 < 0
+        @warn "Negative weights detected"
+    end
+
     f = @muladd ω1 * s1 + ω2 * s2 + ω3 * s3
 
     return f
@@ -75,6 +80,11 @@ end
     ω1 = α1 * _αsum
     ω2 = α2 * _αsum
     ω3 = α3 * _αsum
+
+    # check if any weights is negative
+    if ω1 < 0 || ω2 < 0 || ω3 < 0
+        @warn "Negative weights detected"
+    end
 
     f = @muladd ω1 * s1 + ω2 * s2 + ω3 * s3
 
